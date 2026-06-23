@@ -5,6 +5,7 @@
 #include "AdvanceStepperAxis.h"
 #include "StepperPioPulseEngine.h"
 #include "AdvanceMotionController.h"
+#include "HomeSequenceFunctionBlock.h"
 
 int main() {
     /*
@@ -321,125 +322,14 @@ int main() {
         pulseEngine
     );
 
-    /*
-        Validación del controlador.
-
-        Puede fallar si:
-        - Hay nombres duplicados.
-        - Algún eje quedó como UNNAMED.
-        - Algún pin STEP está fuera del grupo PIO.
-        - Algún pin STEP está repetido.
-    */
-    if (!motion.isValid()) {
-        printf("ERROR: Motion controller invalid.\n");
-        printf("Check axis names, duplicate names or STEP pins.\n");
-
-        while (true) {
-            tight_loop_contents();
+    executeHomeSequence(
+        motion,
+        {
+            "Z",
+            "X",
+            "Y"
         }
-    }
-
-    /*
-        Imprime el mapa de ejes.
-
-        Ejemplo esperado:
-
-        Index [0] = Axis X
-        Index [1] = Axis Y
-        Index [2] = Axis Z
-    */
-    motion.printAxisMap();
-
-    /*
-        ------------------------------------------------------------
-        ORDEN DE HOME POR NOMBRE
-        ------------------------------------------------------------
-
-        Ya no es necesario usar:
-
-        motion.setHomeOrder({2, 0, 1});
-
-        Ahora usamos nombres.
-
-        Orden configurado:
-
-        1. Z
-        2. X
-        3. Y
-    */
-    bool homeOrderOk =
-        motion.setHomeOrderByName(
-            {
-                "Z",
-                "X",
-                "Y"
-            }
-        );
-
-    if (!homeOrderOk) {
-        printf("ERROR: Invalid home order.\n");
-
-        motion.emergencyStop();
-
-        while (true) {
-            tight_loop_contents();
-        }
-    }
-
-    /*
-        Imprime el orden HOME configurado.
-    */
-    motion.printHomeOrder();
-
-    /*
-        Inicializa:
-
-        - PIO
-        - pines STEP
-        - pines DIR
-        - pines ENABLE
-        - pines HOME
-        - pines de límites
-    */
-    motion.init();
-
-    /*
-        Habilitar drivers.
-    */
-    axisX.enable();
-    axisY.enable();
-    axisZ.enable();
-
-    /*
-        ------------------------------------------------------------
-        HOME
-        ------------------------------------------------------------
-
-        homeAll() hará HOME en el orden configurado:
-
-        1. Z
-        2. X
-        3. Y
-
-        Es secuencial:
-        primero termina Z, luego X y luego Y.
-    */
-    printf("Starting HOME...\n");
-
-    bool homingOk =
-        motion.homeAll();
-
-    if (!homingOk) {
-        printf("ERROR: HOME failed.\n");
-
-        motion.emergencyStop();
-
-        while (true) {
-            tight_loop_contents();
-        }
-    }
-
-    printf("HOME completed.\n");
+    );
 
     /*
         ------------------------------------------------------------
