@@ -1,0 +1,1735 @@
+INTRODUCCION TECNICA PARA CODEX
+PROYECTO: template_motion_project
+PLATAFORMA: Raspberry Pi Pico / RP2040
+LENGUAJE: C/C++ con Pico SDK y PIO
+VERSION DEL DOCUMENTO: 1.0
+FECHA DE REFERENCIA: 2026-06-23
+
+============================================================
+1. OBJETIVO GENERAL DEL PROYECTO
+============================================================
+
+Este proyecto es un primer template base para controlar uno o varios motores paso a paso usando una Raspberry Pi Pico / RP2040 con Pico SDK C/C++.
+
+El proyecto esta diseñado para controlar de 1 a 8 ejes. En el archivo main.cpp actual se instancian 3 ejes llamados X, Y y Z.
+
+La arquitectura separa claramente:
+
+- Configuracion fisica y mecanica de cada eje.
+- Objeto individual por eje.
+- Motor de pulsos STEP usando PIO.
+- Controlador general de movimiento.
+- Perfil trapezoidal de velocidad.
+- Planificador de movimientos en cola.
+- Suavizado geometrico de trayectoria para esquinas.
+- HOME por eje.
+- Orden de HOME configurable por nombre de eje.
+- Validacion de nombres de eje.
+- Validacion de pines STEP dentro del grupo PIO.
+- Limites fisicos minimos/maximos por GPIO.
+- Limites por software minimos/maximos en mm.
+
+La finalidad es tener una plantilla inicial ordenada, entendible y extensible para que Codex pueda continuar el desarrollo sin perder el criterio de arquitectura ya definido.
+
+============================================================
+2. ESTRUCTURA GENERAL DE CARPETAS
+============================================================
+
+La estructura esperada del proyecto es:
+
+template/
+|
+|-- prgProject/
+|   |-- CMakeLists.txt
+|   |-- pico_sdk_import.cmake
+|   |-- main.cpp
+|
+|-- lib/
+|   |-- objStepper/
+|   |   |-- StepperAxisConfig.h
+|   |   |-- AdvanceStepperAxis.h
+|   |   |-- StepperPioPulseEngine.h
+|   |
+|   |-- objMotion/
+|       |-- MotionBlock.h
+|       |-- TrapezoidProfile.h
+|       |-- MotionPlanner.h
+|       |-- AdvanceMotionController.h
+|
+|-- src/
+    |-- srcStepper/
+    |   |-- AdvanceStepperAxis.cpp
+    |   |-- StepperPioPulseEngine.cpp
+    |   |-- stepper.pio
+    |
+    |-- srcMotion/
+        |-- TrapezoidProfile.cpp
+        |-- MotionPlanner.cpp
+        |-- AdvanceMotionController.cpp
+
+Relacion entre carpetas:
+
+- prgProject contiene el punto de entrada del firmware y los archivos de compilacion CMake.
+- lib contiene headers publicos o declaraciones de clases, estructuras y metodos.
+- src contiene las implementaciones .cpp y el programa PIO.
+- lib/objStepper y src/srcStepper trabajan juntos para todo lo relacionado con ejes individuales y generacion de pulsos STEP.
+- lib/objMotion y src/srcMotion trabajan juntos para el control de movimiento, HOME, planner, perfiles de velocidad y sincronizacion entre ejes.
+
+Regla general del proyecto:
+
+- Todo archivo .h declara.
+- Todo archivo .cpp implementa.
+- main.cpp instancia objetos, configura parametros y ejecuta el flujo principal.
+- CMakeLists.txt une todos los archivos y genera el header PIO a partir de stepper.pio.
+
+============================================================
+3. CARPETA prgProject
+============================================================
+
+La carpeta prgProject contiene la aplicacion principal del firmware.
+
+Archivos:
+
+1. CMakeLists.txt
+2. pico_sdk_import.cmake
+3. main.cpp
+
+------------------------------------------------------------
+3.1 CMakeLists.txt
+------------------------------------------------------------
+
+Funcion:
+
+Define como se compila el proyecto con Pico SDK.
+
+Responsabilidades:
+
+- Incluir pico_sdk_import.cmake.
+- Crear el proyecto C/C++/ASM.
+- Definir C11 y C++17.
+- Ejecutar pico_sdk_init().
+- Crear el ejecutable template_motion_project.
+- Agregar todos los archivos .cpp necesarios.
+- Agregar carpetas de include.
+- Generar el header del programa PIO usando pico_generate_pio_header().
+- Enlazar librerias pico_stdlib y hardware_pio.
+- Generar salidas extra como UF2.
+
+Puntos importantes:
+
+- main.cpp vive en prgProject.
+- Los .cpp se referencian con rutas relativas hacia ../src/.
+- Los headers se encuentran en ../lib/objStepper y ../lib/objMotion.
+- stepper.pio se transforma automaticamente en stepper.pio.h durante compilacion.
+
+------------------------------------------------------------
+3.2 pico_sdk_import.cmake
+------------------------------------------------------------
+
+Funcion:
+
+Permite que el proyecto encuentre e importe el Pico SDK.
+
+Notas:
+
+- Debe ser compatible con el Pico SDK oficial.
+- Normalmente se obtiene desde pico-sdk/external/pico_sdk_import.cmake.
+- El entorno debe tener configurado PICO_SDK_PATH o una ruta equivalente.
+
+------------------------------------------------------------
+3.3 main.cpp
+------------------------------------------------------------
+
+Funcion:
+
+Es el punto de entrada del firmware. Aqui se instancian y configuran los 3 ejes actuales: X, Y y Z.
+
+Flujo general de main.cpp:
+
+1. Inicializa stdio con stdio_init_all().
+2. Espera 2 segundos para permitir abrir monitor serial.
+3. Crea StepperPioPulseEngine.
+4. Crea configuracion de eje X con StepperAxisConfig::createBeltDrive().
+5. Asigna nombre obligatorio X con configX.setAxisName("X").
+6. Configura HOME X, limites fisicos y limites por software.
+7. Crea configuracion de eje Y con StepperAxisConfig::createBeltDrive().
+8. Asigna nombre obligatorio Y.
+9. Configura HOME Y, limites fisicos y limites por software.
+10. Crea configuracion de eje Z con StepperAxisConfig::createLeadScrew().
+11. Asigna nombre obligatorio Z.
+12. Configura HOME Z, limites fisicos y limites por software.
+13. Instancia AdvanceStepperAxis para X, Y y Z.
+14. Opcionalmente permite activar simulacion de HOME.
+15. Crea el arreglo AdvanceStepperAxis* axes[].
+16. Instancia AdvanceMotionController motion(axes, 3, pulseEngine).
+17. Valida motion.isValid().
+18. Imprime mapa de ejes con motion.printAxisMap().
+19. Configura orden de HOME por nombre con motion.setHomeOrderByName({"Z", "X", "Y"}).
+20. Imprime el orden HOME con motion.printHomeOrder().
+21. Inicializa el controlador motion.init().
+22. Habilita drivers con axisX.enable(), axisY.enable(), axisZ.enable().
+23. Ejecuta HOME con motion.homeAll().
+24. Mueve a posicion segura despues de HOME.
+25. Configura suavizado de trayectoria.
+26. Carga movimientos en cola con queueLinearTo().
+27. Prepara la cola con prepareQueuedMoves().
+28. Ejecuta motion.update() continuamente en while(true).
+
+Instanciacion principal:
+
+StepperPioPulseEngine pulseEngine(
+    pio0,
+    0,
+    2,
+    10
+);
+
+Significado:
+
+- pio0: bloque PIO usado.
+- 0: maquina de estados PIO usada.
+- 2: primer GPIO del grupo STEP.
+- 10: intervalo minimo entre eventos STEP en microsegundos.
+
+Grupo STEP:
+
+- firstStepGpio = 2
+- STEP_GROUP_PIN_COUNT = 8
+- Pines disponibles para STEP: GPIO 2, 3, 4, 5, 6, 7, 8, 9.
+
+Instancias de ejes:
+
+AdvanceStepperAxis axisX(configX);
+AdvanceStepperAxis axisY(configY);
+AdvanceStepperAxis axisZ(configZ);
+
+Arreglo de ejes:
+
+AdvanceStepperAxis* axes[] = {
+    &axisX,
+    &axisY,
+    &axisZ
+};
+
+Relacion interna:
+
+- axes[0] = X
+- axes[1] = Y
+- axes[2] = Z
+
+Aunque el HOME puede configurarse por nombre, el controlador sigue usando internamente el arreglo.
+
+Orden HOME por nombre:
+
+motion.setHomeOrderByName({"Z", "X", "Y"});
+
+Esto internamente busca:
+
+- "Z" -> axes[2]
+- "X" -> axes[0]
+- "Y" -> axes[1]
+
+Y luego ejecuta:
+
+- homeAxis(2)
+- homeAxis(0)
+- homeAxis(1)
+
+HOME es secuencial, no paralelo.
+
+============================================================
+4. CARPETA lib/objStepper
+============================================================
+
+Esta carpeta contiene declaraciones relacionadas con el sistema stepper:
+
+- Configuracion de eje.
+- Clase de eje individual.
+- Clase de generacion de pulsos STEP por PIO.
+
+Archivos:
+
+1. StepperAxisConfig.h
+2. AdvanceStepperAxis.h
+3. StepperPioPulseEngine.h
+
+------------------------------------------------------------
+4.1 StepperAxisConfig.h
+------------------------------------------------------------
+
+Funcion:
+
+Define la estructura StepperAxisConfig, que almacena todos los parametros fisicos, electricos, mecanicos, de HOME, de limites y de nombre de un eje.
+
+Tambien define el enum AxisMechanismType.
+
+Enum:
+
+AxisMechanismType:
+
+- LEAD_SCREW: eje por husillo.
+- BELT_DRIVE: eje por banda.
+
+Variables principales de StepperAxisConfig:
+
+1. PIN_NOT_USED
+
+Constante usada para indicar que un pin no se usa.
+
+2. AXIS_NAME_MAX_LENGTH
+
+Tamanio maximo del nombre del eje.
+
+3. axisName
+
+Arreglo char que guarda el nombre del eje en mayusculas.
+
+Reglas del nombre:
+
+- Es obligatorio cambiarlo.
+- Por defecto es UNNAMED.
+- UNNAMED no se permite en el controlador.
+- No puede repetirse entre ejes.
+- setAxisName() convierte a mayusculas.
+
+4. stepPin
+
+GPIO usado para STEP del eje.
+
+Debe pertenecer al grupo PIO controlado por StepperPioPulseEngine.
+
+5. dirPin
+
+GPIO usado para DIR del driver.
+
+6. enablePin
+
+GPIO usado para ENABLE del driver.
+
+7. enableActiveLow
+
+Indica si el driver se habilita con 0 logico.
+
+8. directionInvert
+
+Invierte la senial DIR si el motor se mueve al lado contrario.
+
+9. motorStepsPerRev
+
+Pasos completos por vuelta del motor. Ejemplo tipico: 200.
+
+10. microsteps
+
+Microstepping configurado en el driver. Ejemplo: 16.
+
+11. mechanismType
+
+Tipo de mecanismo: husillo o banda.
+
+12. travelPerRevolutionMm
+
+Distancia en mm que avanza el eje por cada vuelta del motor o salida mecanica.
+
+Para banda:
+
+travelPerRevolutionMm = beltPitchMm * pulleyTeeth
+
+Para husillo:
+
+travelPerRevolutionMm = screwPitchMm
+
+13. gearRatio
+
+Relacion mecanica. 1.0 significa transmision directa.
+
+14. maxSpeedMmS
+
+Velocidad maxima permitida para el eje en mm/s.
+
+15. accelerationMmS2
+
+Aceleracion maxima permitida para el eje en mm/s^2.
+
+Variables HOME:
+
+- homeEnabled: activa HOME para el eje.
+- homePin: GPIO del sensor HOME.
+- homeActiveLow: sensor activo en bajo.
+- homeUsePullup: activa pull-up interno.
+- homeDirectionPositive: direccion de busqueda HOME.
+- homeSimulationEnabled: permite HOME simulado.
+- homingSeekSpeedMmS: velocidad rapida de busqueda.
+- homingLatchSpeedMmS: velocidad lenta de precision.
+- homingBackoffMm: distancia de retroceso tras tocar sensor.
+- maxHomingTravelMm: distancia maxima de busqueda HOME.
+- homePositionMm: posicion logica asignada al terminar HOME.
+
+Variables limites fisicos:
+
+- minLimitEnabled
+- minLimitPin
+- minLimitActiveLow
+- minLimitUsePullup
+- maxLimitEnabled
+- maxLimitPin
+- maxLimitActiveLow
+- maxLimitUsePullup
+
+Variables limites por software:
+
+- softLimitsEnabled
+- softLimitMinMm
+- softLimitMaxMm
+
+Metodos de StepperAxisConfig:
+
+setAxisName(const char* name)
+
+Funcion:
+
+- Copia el nombre al arreglo axisName.
+- Convierte caracteres de a-z a A-Z.
+- Rechaza nullptr.
+- Regresa true si encontro al menos un caracter valido que no sea espacio/tab/salto de linea.
+
+createBase()
+
+Funcion:
+
+- Crea una configuracion base con valores seguros por defecto.
+- Asigna nombre UNNAMED.
+- Inicializa pines como PIN_NOT_USED.
+- Define valores default para motor, HOME, limites y velocidades.
+
+Importante:
+
+El nombre UNNAMED es intencionalmente invalido para forzar al usuario a asignar un nombre real.
+
+createLeadScrew(...)
+
+Funcion:
+
+Crea una configuracion para eje por husillo.
+
+Parametros principales:
+
+- stepPin: pin STEP.
+- dirPin: pin DIR.
+- enablePin: pin ENABLE.
+- enableActiveLow: define logica ENABLE.
+- directionInvert: invierte direccion.
+- motorStepsPerRev: pasos por vuelta del motor.
+- microsteps: microstepping.
+- screwPitchMm: avance del husillo por vuelta.
+- gearRatio: relacion mecanica.
+- maxSpeedMmS: velocidad maxima.
+- accelerationMmS2: aceleracion maxima.
+
+createBeltDrive(...)
+
+Funcion:
+
+Crea una configuracion para eje por banda.
+
+Parametros adicionales:
+
+- beltPitchMm: paso de la banda.
+- pulleyTeeth: dientes de la polea.
+
+Calcula:
+
+travelPerRevolutionMm = beltPitchMm * pulleyTeeth
+
+------------------------------------------------------------
+4.2 AdvanceStepperAxis.h
+------------------------------------------------------------
+
+Funcion:
+
+Declara la clase AdvanceStepperAxis. Representa un eje individual.
+
+Esta clase NO genera directamente los pulsos STEP. La generacion de STEP la hace StepperPioPulseEngine. AdvanceStepperAxis gestiona:
+
+- Configuracion del eje.
+- Conversion mm <-> pasos.
+- Posicion actual.
+- Enable/disable del driver.
+- Direccion DIR.
+- Lectura de HOME.
+- Lectura de limites fisicos.
+- Estado homed.
+- Simulacion de HOME.
+- Validacion de limites por software.
+
+Variables privadas:
+
+1. config
+
+Copia de StepperAxisConfig.
+
+2. stepsPerMm
+
+Relacion de pasos por mm calculada desde:
+
+stepsPerMm = motorStepsPerRev * microsteps * gearRatio / travelPerRevolutionMm
+
+3. currentPositionSteps
+
+Posicion actual en pasos.
+
+4. targetPositionSteps
+
+Reservada para posicion objetivo. En el estado actual no se usa como variable principal de movimiento; el controlador calcula bloques.
+
+5. enabled
+
+Estado logico del driver.
+
+6. currentDirection
+
+Ultima direccion enviada al pin DIR.
+
+7. homed
+
+Indica si el eje ya realizo HOME correctamente.
+
+8. simulatedHomeActive
+
+Estado del HOME simulado si homeSimulationEnabled esta activo.
+
+Metodos principales:
+
+AdvanceStepperAxis(const StepperAxisConfig& axisConfig)
+
+Constructor. Copia la configuracion, reinicia posiciones y calcula stepsPerMm.
+
+init()
+
+Inicializa pines DIR, ENABLE, HOME y limites.
+
+No inicializa STEP, porque STEP lo controla PIO.
+
+getAxisName()
+
+Regresa el nombre del eje.
+
+enable()
+
+Activa el driver usando enableActiveLow.
+
+disable()
+
+Desactiva el driver.
+
+setDirection(bool positiveDirection)
+
+Escribe DIR fisico considerando directionInvert.
+
+setDirectionByDelta(int32_t deltaSteps)
+
+Define direccion en funcion del signo de deltaSteps.
+
+setCurrentPositionSteps(int32_t positionSteps)
+
+Asigna posicion actual en pasos.
+
+setCurrentPositionMm(float positionMm)
+
+Convierte mm a pasos y asigna posicion actual.
+
+getCurrentPositionSteps()
+
+Regresa posicion actual en pasos.
+
+getCurrentPositionMm()
+
+Convierte pasos actuales a mm.
+
+mmToSteps(float mm)
+
+Convierte mm a pasos usando lroundf().
+
+stepsToMm(int32_t steps)
+
+Convierte pasos a mm.
+
+getStepsPerMm()
+
+Regresa relacion pasos/mm.
+
+getMaxSpeedMmS()
+
+Regresa velocidad maxima del eje.
+
+getAccelerationMmS2()
+
+Regresa aceleracion maxima.
+
+getStepPin(), getDirPin(), getEnablePin()
+
+Regresan pines del eje.
+
+isEnabled()
+
+Regresa estado logico de ENABLE.
+
+addPositionSteps(int32_t deltaSteps)
+
+Suma o resta pasos a la posicion actual despues de cada pulso real enviado.
+
+isHomeEnabled()
+
+Indica si HOME esta activo.
+
+isHomeSensorActive()
+
+Lee HOME real o simulado.
+
+isMinLimitEnabled(), isMaxLimitEnabled()
+
+Indican si limites fisicos estan activos.
+
+isMinLimitActive(), isMaxLimitActive()
+
+Leen los GPIO de limite fisico.
+
+getHomeDirectionPositive()
+
+Regresa direccion de busqueda HOME.
+
+getHomingSeekSpeedMmS(), getHomingLatchSpeedMmS(), getHomingBackoffMm(), getMaxHomingTravelMm(), getHomePositionMm()
+
+Regresan parametros HOME.
+
+isHomeSimulationEnabled()
+
+Indica si HOME simulado esta activo.
+
+setHomeSimulationEnabled(bool enabled)
+
+Activa/desactiva HOME simulado.
+
+setSimulatedHomeActive(bool active)
+
+Define estado del sensor HOME simulado.
+
+isHomed()
+
+Indica si el eje ya esta referenciado.
+
+setHomed(bool state)
+
+Cambia estado homed.
+
+areSoftLimitsEnabled()
+
+Indica si limites por software estan activos.
+
+isTargetWithinSoftLimits(float targetMm)
+
+Verifica si una posicion destino esta dentro del rango permitido.
+
+getSoftLimitMinMm(), getSoftLimitMaxMm()
+
+Regresan limites por software.
+
+------------------------------------------------------------
+4.3 StepperPioPulseEngine.h
+------------------------------------------------------------
+
+Funcion:
+
+Declara la clase StepperPioPulseEngine. Esta clase se encarga de usar PIO para generar pulsos STEP en hasta 8 pines consecutivos.
+
+Variables privadas:
+
+1. STEP_GROUP_PIN_COUNT
+
+Constante igual a 8. Indica cuantos pines STEP consecutivos controla la maquina PIO.
+
+2. pioBlock
+
+Bloque PIO usado: pio0 o pio1.
+
+3. stateMachine
+
+Maquina de estados usada dentro del PIO.
+
+4. programOffset
+
+Offset del programa PIO cargado.
+
+5. firstStepPin
+
+Primer GPIO del grupo STEP.
+
+6. minimumStepIntervalUs
+
+Intervalo minimo entre eventos STEP.
+
+7. initialized
+
+Indica si el engine PIO ya fue inicializado.
+
+Metodos:
+
+StepperPioPulseEngine(...)
+
+Constructor. Guarda PIO, state machine, primer pin STEP e intervalo minimo.
+
+init()
+
+Carga programa PIO si hace falta e inicializa la maquina de estados.
+
+isInitialized()
+
+Indica si init() ya fue ejecutado.
+
+getFirstStepPin()
+
+Regresa primer pin STEP.
+
+getStepGroupPinCount()
+
+Regresa 8.
+
+pinBelongsToStepGroup(uint gpioPin)
+
+Valida si un pin pertenece al grupo STEP.
+
+getPinOffset(uint gpioPin)
+
+Convierte un GPIO en offset de mascara.
+
+Ejemplo:
+
+firstStepPin = 2
+GPIO 2 -> offset 0
+GPIO 3 -> offset 1
+GPIO 4 -> offset 2
+
+getMinimumStepIntervalUs()
+
+Regresa intervalo minimo entre eventos STEP.
+
+getMaxStepEventsPerSecond()
+
+Calcula frecuencia maxima de eventos STEP.
+
+sendStepMaskBlocking(uint32_t stepMask)
+
+Manda una mascara de hasta 8 bits al FIFO PIO de forma bloqueante.
+
+trySendStepMask(uint32_t stepMask)
+
+Intenta mandar mascara sin bloquear si FIFO tiene espacio.
+
+============================================================
+5. CARPETA src/srcStepper
+============================================================
+
+Contiene implementaciones de ejes y PIO.
+
+Archivos:
+
+1. AdvanceStepperAxis.cpp
+2. StepperPioPulseEngine.cpp
+3. stepper.pio
+
+------------------------------------------------------------
+5.1 AdvanceStepperAxis.cpp
+------------------------------------------------------------
+
+Implementa todos los metodos declarados en AdvanceStepperAxis.h.
+
+Puntos importantes:
+
+- calculateStepsPerMm() calcula la conversion pasos/mm.
+- init() no configura STEP; STEP es responsabilidad de PIO.
+- readInputActive() interpreta entradas activas en bajo o alto.
+- isHomeSensorActive() cambia entre HOME fisico y HOME simulado.
+- addPositionSteps() actualiza posicion cada vez que el controlador confirma un pulso STEP.
+
+------------------------------------------------------------
+5.2 StepperPioPulseEngine.cpp
+------------------------------------------------------------
+
+Implementa StepperPioPulseEngine.
+
+Detalles importantes:
+
+- Usa variables static para no cargar el programa PIO dos veces en el mismo bloque PIO.
+- Soporta pio0 y pio1.
+- init() llama a stepper_multi_program_init(), que viene generado desde stepper.pio.
+- sendStepMaskBlocking() enmascara stepMask con 0xFF para limitar a 8 bits.
+
+------------------------------------------------------------
+5.3 stepper.pio
+------------------------------------------------------------
+
+Programa PIO que genera pulsos STEP para 8 pines consecutivos.
+
+Funcionamiento:
+
+- Espera una mascara por FIFO.
+- out pins, 8 pone en alto los pines indicados por la mascara.
+- mov pins, null baja todos los pines a 0.
+- Cada dato enviado por CPU representa un evento STEP simultaneo para uno o varios ejes.
+
+Formato de mascara:
+
+bit 0 = STEP eje con offset 0
+bit 1 = STEP eje con offset 1
+bit 2 = STEP eje con offset 2
+...
+bit 7 = STEP eje con offset 7
+
+Ejemplo:
+
+firstStepPin = 2
+
+- GPIO 2 offset 0, mascara 0b00000001
+- GPIO 3 offset 1, mascara 0b00000010
+- GPIO 4 offset 2, mascara 0b00000100
+
+Si se requiere step simultaneo X y Y:
+
+mask = 0b00000011
+
+Bloque C-SDK dentro de stepper.pio:
+
+stepper_multi_program_init(...)
+
+Configura:
+
+- GPIOs STEP.
+- Direccion de pines PIO.
+- out pins.
+- out shift.
+- FIFO unido TX.
+- divisor de clock.
+- inicializacion y encendido de state machine.
+
+============================================================
+6. CARPETA lib/objMotion
+============================================================
+
+Esta carpeta contiene declaraciones relacionadas con movimiento.
+
+Archivos:
+
+1. MotionBlock.h
+2. TrapezoidProfile.h
+3. MotionPlanner.h
+4. AdvanceMotionController.h
+
+------------------------------------------------------------
+6.1 MotionBlock.h
+------------------------------------------------------------
+
+Funcion:
+
+Define la estructura MotionBlock. Representa un bloque de movimiento lineal ya convertido parcialmente a pasos.
+
+Variables:
+
+- MAX_AXES: maximo 8.
+- axisCount: cantidad de ejes usados.
+- deltaSteps[MAX_AXES]: diferencia en pasos por eje.
+- absSteps[MAX_AXES]: valor absoluto de pasos por eje.
+- direction[MAX_AXES]: direccion por eje.
+- dominantSteps: mayor cantidad de pasos entre todos los ejes.
+- deltaMm[MAX_AXES]: diferencia en mm por eje.
+- distanceMm: distancia vectorial total del movimiento.
+- requestedSpeedMmS: velocidad solicitada.
+- nominalSpeedMmS: velocidad final limitada.
+- entrySpeedMmS: velocidad de entrada al bloque.
+- exitSpeedMmS: velocidad de salida del bloque.
+- accelerationMmS2: aceleracion limitada final.
+- valid: indica si el bloque es valido.
+
+Metodo reset():
+
+Limpia todos los valores del bloque.
+
+Uso:
+
+AdvanceMotionController construye MotionBlock antes de ejecutar un movimiento directo o un movimiento planeado.
+
+------------------------------------------------------------
+6.2 TrapezoidProfile.h
+------------------------------------------------------------
+
+Funcion:
+
+Declara estructuras y clase para calcular perfil trapezoidal o triangular de velocidad.
+
+TrapezoidProfileData:
+
+- accelerationSteps: pasos en aceleracion.
+- cruiseSteps: pasos a velocidad constante.
+- decelerationSteps: pasos en desaceleracion.
+- entrySpeedMmS: velocidad de entrada.
+- exitSpeedMmS: velocidad de salida.
+- requestedSpeedMmS: velocidad solicitada.
+- reachableSpeedMmS: velocidad pico alcanzable.
+- accelerationMmS2: aceleracion.
+- accelerationDistanceMm: distancia de aceleracion.
+- cruiseDistanceMm: distancia de crucero.
+- decelerationDistanceMm: distancia de desaceleracion.
+- isTriangular: true si no hay tramo de crucero.
+- valid: true si el calculo es valido.
+
+TrapezoidProfile::calculate(...)
+
+Funcion:
+
+Calcula si el movimiento puede alcanzar velocidad solicitada. Si no puede, genera perfil triangular.
+
+Parametros:
+
+- totalSteps: pasos dominantes totales.
+- distanceMm: distancia total en mm.
+- requestedSpeedMmS: velocidad deseada.
+- accelerationMmS2: aceleracion.
+- entrySpeedMmS: velocidad inicial.
+- exitSpeedMmS: velocidad final.
+
+------------------------------------------------------------
+6.3 MotionPlanner.h
+------------------------------------------------------------
+
+Funcion:
+
+Declara el planificador de movimientos en cola. Su objetivo es tomar movimientos lineales crudos y convertirlos en movimientos planeados.
+
+Puede generar suavizado de trayectoria en esquinas si esta activado.
+
+Estructuras:
+
+MotionPlannerConfig:
+
+- blendEnabled: activa suavizado.
+- blendDistanceMm: distancia maxima para recortar esquina.
+- blendSegmentLengthMm: longitud aproximada de segmentos de curva.
+- maxBlendSegments: maximo de segmentos de curva.
+- maxTrimRatio: porcentaje maximo de recorte respecto a longitud de segmento.
+- minMovementMm: distancia minima util.
+- blendSpeedScale: escala de velocidad en curvas.
+
+RawLinearMove:
+
+Movimiento solicitado por el usuario antes de planificar.
+
+Variables:
+
+- axisCount
+- targetPositionMm[MAX_AXES]
+- requestedSpeedMmS
+- valid
+
+PlannedLinearMove:
+
+Movimiento ya preparado para ejecucion.
+
+Variables:
+
+- axisCount
+- targetPositionMm[MAX_AXES]
+- requestedSpeedMmS
+- entrySpeedMmS
+- exitSpeedMmS
+- isBlendSegment
+- valid
+
+Clase MotionPlanner:
+
+Variables privadas:
+
+- MAX_AXES
+- RAW_QUEUE_SIZE
+- PLANNED_QUEUE_SIZE
+- axisCount
+- configured
+- config
+- rawQueue
+- rawCount
+- plannedQueue
+- plannedHead
+- plannedTail
+- plannedCount
+- startPositionMm
+
+Metodos principales:
+
+configure(...)
+
+Configura planner para cantidad de ejes y parametros de suavizado.
+
+setStartPosition(...)
+
+Define punto inicial para construir la trayectoria.
+
+setBlendEnabled(bool enabled)
+
+Activa/desactiva suavizado.
+
+setBlendParameters(...)
+
+Actualiza parametros de suavizado.
+
+pushLinearTo(...)
+
+Agrega un movimiento crudo a la cola.
+
+buildPlannedQueue()
+
+Construye la cola planeada. Si blendEnabled=true y axisCount>=2, detecta esquinas y genera segmentos Bezier.
+
+popPlannedMove(...)
+
+Extrae siguiente movimiento planeado.
+
+hasPlannedMoves(), hasRawMoves()
+
+Consultan si hay movimientos.
+
+getRawMoveCount(), getPlannedMoveCount()
+
+Regresan conteos.
+
+clear()
+
+Limpia cola cruda y planeada.
+
+Metodos privados de geometria:
+
+- distanceBetween()
+- normalizeVector()
+- dotProduct()
+- copyPoint()
+- calculatePointBeforeCorner()
+- calculatePointAfterCorner()
+- calculateBezierPoint()
+
+Importante:
+
+Con un solo eje, no se genera suavizado geometrico porque no hay esquinas espaciales. La condicion del planner exige axisCount >= 2 para crear curvas.
+
+------------------------------------------------------------
+6.4 AdvanceMotionController.h
+------------------------------------------------------------
+
+Funcion:
+
+Declara la clase principal de control de movimiento. Esta clase une:
+
+- Ejes individuales AdvanceStepperAxis.
+- Motor de pulsos StepperPioPulseEngine.
+- Planner MotionPlanner.
+- Perfil TrapezoidProfile.
+- Bloques MotionBlock.
+- HOME.
+- Limites.
+- Secuencia update().
+
+Variables privadas importantes:
+
+1. MAX_AXES
+
+Maximo 8 ejes.
+
+2. MIN_AXES
+
+Minimo 1 eje.
+
+3. axes[MAX_AXES]
+
+Arreglo de punteros a ejes.
+
+4. axisCount
+
+Cantidad de ejes cargados.
+
+5. pulseEngine
+
+Puntero al motor PIO de pulsos.
+
+6. planner
+
+Planificador de trayectoria.
+
+7. currentBlock
+
+Bloque de movimiento en ejecucion.
+
+8. currentProfile
+
+Perfil trapezoidal del bloque actual.
+
+9. validController
+
+Indica si controlador es valido.
+
+10. busy
+
+Indica si hay movimiento en ejecucion.
+
+11. dominantStepCounter
+
+Contador de pasos dominantes ejecutados.
+
+12. bresenhamError[MAX_AXES]
+
+Errores acumulados de Bresenham por eje.
+
+13. nextStepTime
+
+Tiempo absoluto del proximo step.
+
+14. homeOrder[MAX_AXES]
+
+Orden de HOME en indices de eje.
+
+15. homeOrderCount
+
+Cantidad de ejes configurados para HOME.
+
+16. homeOrderConfigured
+
+Indica si se configuro el orden HOME.
+
+Metodos publicos principales:
+
+AdvanceMotionController(...)
+
+Constructor. Carga ejes, valida pines STEP, valida nombres y configura planner.
+
+init()
+
+Inicializa PIO y ejes.
+
+isValid()
+
+Regresa si el controlador paso validaciones.
+
+getAxisCount()
+
+Regresa cantidad de ejes.
+
+getAxisName(uint axisIndex)
+
+Regresa nombre de eje por indice.
+
+printAxisMap()
+
+Imprime mapa de indices, nombres y pines.
+
+printHomeOrder()
+
+Imprime orden HOME configurado.
+
+moveLinearTo(...)
+
+Movimiento directo a una posicion. No usa MotionPlanner ni suavizado de trayectoria. Si se requiere un solo movimiento, esta es la forma directa.
+
+configurePathSmoothing(...)
+
+Configura suavizado para movimientos en cola.
+
+clearMotionQueue()
+
+Limpia cola.
+
+queueLinearTo(...)
+
+Agrega movimiento a cola cruda.
+
+prepareQueuedMoves()
+
+Convierte cola cruda en cola planeada. Usa suavizado si esta activado.
+
+update()
+
+Debe llamarse constantemente. Ejecuta pasos cuando corresponde.
+
+isBusy()
+
+Indica si hay movimiento activo.
+
+stop()
+
+Detiene movimiento y limpia cola.
+
+emergencyStop()
+
+Detiene movimiento, limpia cola y deshabilita ejes.
+
+setCurrentPosition(...)
+
+Asigna posicion actual logica.
+
+getCurrentPosition(...)
+
+Obtiene posicion actual.
+
+setHomeOrder(...)
+
+Define orden HOME por indices.
+
+setHomeOrderByName(...)
+
+Define orden HOME por nombres de eje. Es la forma recomendada visualmente.
+
+clearHomeOrder()
+
+Limpia orden HOME.
+
+homeAxis(uint axisIndex)
+
+Hace HOME de un eje especifico.
+
+homeAll()
+
+Hace HOME secuencial siguiendo el orden configurado.
+
+moveToSafePositionAfterHome(...)
+
+Mueve a posicion segura solo si todos los ejes estan homed.
+
+============================================================
+7. CARPETA src/srcMotion
+============================================================
+
+Contiene implementaciones de movimiento.
+
+Archivos:
+
+1. TrapezoidProfile.cpp
+2. MotionPlanner.cpp
+3. AdvanceMotionController.cpp
+
+------------------------------------------------------------
+7.1 TrapezoidProfile.cpp
+------------------------------------------------------------
+
+Implementa calculo de perfil trapezoidal/triangular.
+
+Logica general:
+
+1. Valida totalSteps, distanceMm, velocidad y aceleracion.
+2. Limita entrySpeed y exitSpeed a rango valido.
+3. Calcula distancia necesaria para acelerar hasta velocidad solicitada.
+4. Calcula distancia necesaria para desacelerar desde velocidad solicitada.
+5. Si ambas caben en la distancia total, usa perfil trapezoidal.
+6. Si no caben, calcula velocidad pico alcanzable y usa perfil triangular.
+7. Convierte distancias de aceleracion/desaceleracion a pasos relativos.
+
+------------------------------------------------------------
+7.2 MotionPlanner.cpp
+------------------------------------------------------------
+
+Implementa el planner.
+
+Flujo de buildPlannedQueue():
+
+1. Borra cola planeada.
+2. Construye lista de puntos: posicion inicial + targets crudos.
+3. Inicializa arrays de puntos de entrada/salida de curvas.
+4. Si blendEnabled, rawCount >= 2 y axisCount >= 2, analiza esquinas.
+5. Para cada esquina:
+   - Calcula vector de entrada.
+   - Calcula vector de salida.
+   - Calcula dot product.
+   - Omite si es casi linea recta.
+   - Omite si es cambio casi 180 grados.
+   - Calcula trimDistance.
+   - Calcula punto antes y despues de esquina.
+   - Marca esquina con blend.
+6. Recorre movimientos crudos.
+7. Agrega linea hasta punto antes de esquina si aplica.
+8. Si hay blend, genera segmentos Bezier hacia punto despues de esquina.
+9. Asigna velocidades entry/exit.
+
+Importante:
+
+El suavizado se aplica solo al usar:
+
+- queueLinearTo()
+- prepareQueuedMoves()
+- update()
+
+No se aplica al usar moveLinearTo().
+
+------------------------------------------------------------
+7.3 AdvanceMotionController.cpp
+------------------------------------------------------------
+
+Implementa el controlador principal.
+
+Flujo del constructor:
+
+1. Inicializa variables.
+2. Limpia arrays.
+3. loadAxes().
+4. validateAxesStepPins().
+5. validateAxisNames().
+6. Configura MotionPlanner.
+
+Validaciones importantes:
+
+validateAxesStepPins()
+
+- Verifica que cada stepPin pertenezca al grupo PIO.
+- Verifica que no haya offsets STEP repetidos.
+
+validateAxisNames()
+
+- Rechaza nombres nullptr.
+- Rechaza nombres vacios.
+- Rechaza UNNAMED.
+- Rechaza duplicados.
+
+setHomeOrderByName()
+
+- Recibe nombres como "Z", "X", "Y".
+- Normaliza a mayusculas.
+- Busca el indice interno de cada nombre.
+- Evita repetidos.
+- Llena homeOrder con indices.
+
+homeAll()
+
+- Requiere homeOrderConfigured=true.
+- Ejecuta HOME en orden.
+- Es secuencial y bloqueante.
+- Si falla un eje, devuelve false.
+
+homeAxis()
+
+Secuencia de HOME:
+
+1. Valida controlador, eje, busy y HOME enabled.
+2. Habilita eje.
+3. Si HOME simulado esta activo y sensor simulado activo, asigna homePositionMm y termina.
+4. Determina direccion HOME.
+5. Calcula delay de busqueda rapida.
+6. Calcula delay de entrada lenta.
+7. Convierte maxHomingTravelMm a pasos.
+8. Busca sensor HOME rapido.
+9. Si excede distancia maxima, emergencyStop().
+10. Retrocede homingBackoffMm en sentido contrario.
+11. Espera 100 ms.
+12. Entra lento hasta sensor.
+13. Asigna posicion logica HOME.
+14. Marca eje como homed.
+
+executeBresenhamStep()
+
+Funcion principal de sincronizacion de ejes:
+
+1. Si termino dominantSteps, libera busy.
+2. Inicializa stepMask.
+3. Recorre ejes.
+4. Acumula bresenhamError.
+5. Si un eje debe dar paso, verifica limite fisico.
+6. Calcula pinOffset del STEP.
+7. Agrega bit a stepMask.
+8. Actualiza positionDelta.
+9. Envia stepMask al PIO.
+10. Actualiza posicion en pasos.
+11. Incrementa dominantStepCounter.
+
+update()
+
+Debe llamarse constantemente en loop.
+
+Si no hay movimiento activo, intenta cargar siguiente movimiento planeado.
+
+Si hay movimiento activo y ya llego nextStepTime:
+
+- Ejecuta paso Bresenham.
+- Calcula nuevo delay.
+- Actualiza nextStepTime.
+
+============================================================
+8. RELACION GENERAL ENTRE CLASES
+============================================================
+
+Relacion de instancias:
+
+main.cpp
+|
+|-- StepperPioPulseEngine pulseEngine
+|
+|-- StepperAxisConfig configX/configY/configZ
+|   |
+|   |-- AdvanceStepperAxis axisX/axisY/axisZ
+|
+|-- AdvanceStepperAxis* axes[]
+|   |
+|   |-- AdvanceMotionController motion
+|       |
+|       |-- usa pulseEngine para mandar STEP
+|       |-- usa axes[] para leer posiciones, limites y HOME
+|       |-- usa MotionPlanner para cola/suavizado
+|       |-- usa MotionBlock para movimientos lineales
+|       |-- usa TrapezoidProfile para aceleracion y desaceleracion
+
+Relacion funcional:
+
+- StepperAxisConfig define datos.
+- AdvanceStepperAxis interpreta y opera un eje.
+- StepperPioPulseEngine genera pulsos STEP.
+- MotionBlock describe un movimiento ya calculado.
+- TrapezoidProfile define como acelerar y desacelerar.
+- MotionPlanner prepara trayectorias en cola y suavizado.
+- AdvanceMotionController coordina todo.
+- main.cpp configura e inicia.
+
+============================================================
+9. FLUJO DE MOVIMIENTO DIRECTO
+============================================================
+
+Uso:
+
+motion.moveLinearTo({100.0f, 50.0f, 10.0f}, 40.0f);
+
+while (motion.isBusy()) {
+    motion.update();
+}
+
+Flujo interno:
+
+1. moveLinearTo() valida que no este busy.
+2. buildLinearBlockTo() crea un MotionBlock.
+3. buildLinearBlockToArray() calcula deltas, pasos, direcciones y limites.
+4. startMotionBlock() calcula perfil trapezoidal.
+5. update() ejecuta Bresenham.
+6. pulseEngine manda mascaras STEP.
+
+Importante:
+
+moveLinearTo() NO usa MotionPlanner ni suavizado geometrico. Es un movimiento directo.
+
+============================================================
+10. FLUJO DE MOVIMIENTO EN COLA CON SUAVIZADO
+============================================================
+
+Uso:
+
+motion.configurePathSmoothing(true, 2.0f, 0.5f, 12, 0.70f);
+
+motion.clearMotionQueue();
+motion.queueLinearTo({100.0f, 0.0f, 10.0f}, 40.0f);
+motion.queueLinearTo({100.0f, 100.0f, 10.0f}, 40.0f);
+motion.queueLinearTo({200.0f, 100.0f, 10.0f}, 40.0f);
+motion.prepareQueuedMoves();
+
+while (motion.isBusy() || motion.getPlannedMoveCount() > 0) {
+    motion.update();
+}
+
+Flujo interno:
+
+1. queueLinearTo() guarda movimientos crudos.
+2. prepareQueuedMoves() fija posicion inicial actual.
+3. MotionPlanner::buildPlannedQueue() analiza esquinas.
+4. Si suavizado activo, genera segmentos Bezier.
+5. update() carga movimientos planeados uno por uno.
+6. startPlannedLinearMove() convierte cada planned move en MotionBlock.
+7. executeBresenhamStep() ejecuta pulsos sincronizados.
+
+============================================================
+11. HOME POR NOMBRE
+============================================================
+
+La forma recomendada es:
+
+motion.setHomeOrderByName({"Z", "X", "Y"});
+
+Beneficios:
+
+- No depende visualmente de indices.
+- Evita confundir axes[0], axes[1], axes[2].
+- Permite cambiar orden interno de arreglo sin reescribir HOME manualmente, siempre que los nombres esten correctos.
+
+Reglas:
+
+- Los nombres se normalizan a mayusculas.
+- No se permiten nombres duplicados.
+- No se permite UNNAMED.
+- Si un nombre no existe, setHomeOrderByName() retorna false.
+
+============================================================
+12. VALIDACIONES IMPLEMENTADAS
+============================================================
+
+Validacion de ejes:
+
+- numberOfAxes debe estar entre 1 y 8.
+- axisList no puede ser nullptr.
+- Ningun axisList[i] puede ser nullptr.
+
+Validacion de pines STEP:
+
+- Cada stepPin debe pertenecer al grupo PIO.
+- No debe repetirse un stepPin/offset.
+
+Validacion de nombres:
+
+- No nullptr.
+- No vacio.
+- No UNNAMED.
+- No duplicado.
+- Comparacion sensible al texto ya normalizado a mayusculas.
+
+Validacion de movimientos:
+
+- Cantidad de coordenadas debe coincidir con axisCount.
+- Velocidad solicitada debe ser mayor a 0.
+- Target debe estar dentro de soft limits si estan activos.
+- El movimiento debe tener distancia mayor a 0.
+- El perfil trapezoidal debe ser valido.
+
+Validacion de limites fisicos:
+
+Antes de cada paso:
+
+- Si la direccion es positiva y maxLimit esta activo, se bloquea.
+- Si la direccion es negativa y minLimit esta activo, se bloquea.
+- Si se bloquea, se ejecuta emergencyStop().
+
+============================================================
+13. COMPORTAMIENTO DE emergencyStop()
+============================================================
+
+emergencyStop() hace:
+
+1. stop()
+2. Limpia movimiento actual.
+3. Limpia cola del planner.
+4. Deshabilita todos los ejes.
+
+En main.cpp actual, tras error grave se usa:
+
+while (true) {
+    tight_loop_contents();
+}
+
+Esto deja el firmware detenido intencionalmente.
+
+Para una version futura, se recomienda reemplazar ciclos infinitos por una maquina de estados de falla con boton fisico o comando serial para reintentar HOME.
+
+============================================================
+14. CONVENCIONES DEL PROYECTO
+============================================================
+
+Convenciones de nombres:
+
+- Clases con estilo PascalCase.
+- Metodos con estilo camelCase.
+- Constantes estaticas en mayusculas.
+- Archivos .h en lib.
+- Archivos .cpp en src.
+
+Convenciones de ejes:
+
+- X, Y, Z son nombres logicos.
+- El indice del arreglo no debe usarse visualmente para HOME si se puede usar nombre.
+- El nombre del eje es obligatorio.
+
+Convenciones de movimiento:
+
+- moveLinearTo(): movimiento directo.
+- queueLinearTo() + prepareQueuedMoves(): movimiento en cola con opcion de suavizado.
+- update(): siempre debe llamarse de forma continua durante ejecucion.
+
+Convencion PIO:
+
+- Los STEP deben estar consecutivos.
+- DIR, ENABLE, HOME y LIMITS pueden estar en otros GPIO.
+
+============================================================
+15. CONFIGURACION ACTUAL DE PINES EN main.cpp
+============================================================
+
+STEP:
+
+- X STEP = GPIO 2
+- Y STEP = GPIO 3
+- Z STEP = GPIO 4
+
+DIR:
+
+- X DIR = GPIO 10
+- Y DIR = GPIO 11
+- Z DIR = GPIO 12
+
+ENABLE:
+
+- X ENABLE = GPIO 13
+- Y ENABLE = GPIO 14
+- Z ENABLE = GPIO 15
+
+HOME:
+
+- X HOME = GPIO 16
+- Y HOME = GPIO 19
+- Z HOME = GPIO 22
+
+LIMITES X:
+
+- X MIN = GPIO 17
+- X MAX = GPIO 18
+
+LIMITES Y:
+
+- Y MIN = GPIO 20
+- Y MAX = GPIO 21
+
+LIMITES Z:
+
+- Z MIN = GPIO 26
+- Z MAX = GPIO 27
+
+============================================================
+16. CONFIGURACION MECANICA ACTUAL
+============================================================
+
+Eje X:
+
+- Mecanismo: banda.
+- Motor: 200 pasos/vuelta.
+- Microsteps: 16.
+- Banda: 2.0 mm.
+- Polea: 20 dientes.
+- Avance por vuelta: 40 mm.
+- Velocidad maxima: 100 mm/s.
+- Aceleracion: 300 mm/s^2.
+- HOME hacia negativo.
+- Soft limits: 0 a 300 mm.
+
+Eje Y:
+
+- Igual a X.
+- HOME hacia negativo.
+- Soft limits: 0 a 300 mm.
+
+Eje Z:
+
+- Mecanismo: husillo.
+- Motor: 200 pasos/vuelta.
+- Microsteps: 16.
+- Pitch: 8 mm/vuelta.
+- Velocidad maxima: 20 mm/s.
+- Aceleracion: 100 mm/s^2.
+- HOME hacia positivo.
+- Soft limits: 0 a 100 mm.
+
+============================================================
+17. NOTAS PARA CODEX AL MODIFICAR ESTE PROYECTO
+============================================================
+
+Al modificar este proyecto, respetar:
+
+1. No mover archivos de carpeta sin actualizar CMakeLists.txt.
+2. Si se agrega un .cpp nuevo, agregarlo en add_executable().
+3. Si se agrega un header, agregar ruta include si pertenece a nueva carpeta.
+4. No cambiar el principio de que STEP lo controla PIO.
+5. No inicializar stepPin en AdvanceStepperAxis::init().
+6. Si se modifica stepper.pio, validar que pico_generate_pio_header() siga correcto.
+7. Mantener compatibilidad de 1 a 8 ejes.
+8. Mantener validacion de nombres obligatorios.
+9. Mantener HOME por nombre como forma preferida.
+10. Mantener moveLinearTo() como directo sin planner.
+11. Mantener queueLinearTo() + prepareQueuedMoves() como flujo con planner.
+12. Evitar sleeps largos dentro del while principal de update().
+13. Si se agrega comunicacion serial o TCP, no bloquear update() por mucho tiempo.
+14. Si se agrega reintento de HOME, implementar maquina de estados de falla en vez de ciclos infinitos.
+
+============================================================
+18. LIMITACIONES ACTUALES CONOCIDAS
+============================================================
+
+1. HOME es bloqueante.
+
+homeAxis() usa bucles while y stepAxisOnceBlocking(). Mientras hace HOME de un eje, no ejecuta movimiento paralelo.
+
+2. homeAll() es secuencial.
+
+Primero termina un eje, luego el siguiente.
+
+3. No hay maquina de estados de fault recuperable.
+
+En main.cpp actual, errores graves detienen el programa en while(true).
+
+4. No hay comunicacion externa todavia.
+
+El proyecto esta listo para agregarse serial, USB, TCP/IP u otro protocolo.
+
+5. No hay persistencia de configuracion.
+
+Los parametros se definen en main.cpp.
+
+6. No hay interpolacion avanzada tipo GRBL.
+
+El template implementa movimiento lineal sincronizado y suavizado basico por Bezier, no un planner industrial completo.
+
+============================================================
+19. COMANDOS DE COMPILACION
+============================================================
+
+Desde:
+
+template/prgProject
+
+Ejecutar:
+
+mkdir build
+cd build
+cmake -G "Ninja" ..
+cmake --build .
+
+Requisitos:
+
+- Pico SDK instalado.
+- pico_sdk_import.cmake correcto.
+- PICO_SDK_PATH configurado.
+- CMake instalado.
+- Ninja instalado si se usa -G "Ninja".
+- Toolchain ARM GCC configurado.
+
+============================================================
+20. RESUMEN FINAL PARA CODEX
+============================================================
+
+Este proyecto es un template modular de control de movimiento para RP2040.
+
+La idea central es:
+
+- main.cpp configura e instancia.
+- StepperAxisConfig describe cada eje.
+- AdvanceStepperAxis opera cada eje individual.
+- StepperPioPulseEngine genera los pulsos STEP por PIO.
+- AdvanceMotionController coordina los ejes.
+- MotionBlock representa un movimiento ejecutable.
+- TrapezoidProfile calcula aceleracion/desaceleracion.
+- MotionPlanner prepara colas y suavizado.
+- stepper.pio ejecuta pulsos simultaneos por mascara.
+
+El orden de HOME debe configurarse preferentemente con nombres:
+
+motion.setHomeOrderByName({"Z", "X", "Y"});
+
+Los movimientos simples deben usar:
+
+motion.moveLinearTo(...);
+
+Las trayectorias con multiples puntos y suavizado deben usar:
+
+motion.queueLinearTo(...);
+motion.prepareQueuedMoves();
+motion.update();
+
+Este documento debe servir como contexto inicial para Codex antes de modificar, extender, depurar o reorganizar el template.

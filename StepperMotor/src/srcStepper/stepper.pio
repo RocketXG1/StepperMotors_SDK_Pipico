@@ -1,0 +1,93 @@
+.program stepper_multi
+
+; Controla 8 pines STEP consecutivos.
+;
+; Cada dato recibido por FIFO es una máscara:
+;
+; bit 0 = STEP eje 0
+; bit 1 = STEP eje 1
+; bit 2 = STEP eje 2
+; ...
+; bit 7 = STEP eje 7
+
+.define public STEP_HIGH_DELAY 2
+.define public STEP_LOW_DELAY 2
+
+.wrap_target
+    pull block
+    out pins, 8 [STEP_HIGH_DELAY]
+    mov pins, null [STEP_LOW_DELAY]
+.wrap
+
+
+% c-sdk {
+#include "hardware/clocks.h"
+
+static inline void stepper_multi_program_init(
+    PIO pio,
+    uint sm,
+    uint offset,
+    uint first_step_pin,
+    float pio_frequency_hz
+) {
+    const uint step_pin_count = 8;
+
+    for (uint i = 0; i < step_pin_count; i++) {
+        uint pin = first_step_pin + i;
+
+        gpio_init(pin);
+        gpio_set_dir(pin, GPIO_OUT);
+        gpio_put(pin, 0);
+
+        pio_gpio_init(pio, pin);
+    }
+
+    pio_sm_set_consecutive_pindirs(
+        pio,
+        sm,
+        first_step_pin,
+        step_pin_count,
+        true
+    );
+
+    pio_sm_config c =
+        stepper_multi_program_get_default_config(offset);
+
+    sm_config_set_out_pins(
+        &c,
+        first_step_pin,
+        step_pin_count
+    );
+
+    sm_config_set_out_shift(
+        &c,
+        true,
+        false,
+        32
+    );
+
+    sm_config_set_fifo_join(
+        &c,
+        PIO_FIFO_JOIN_TX
+    );
+
+    float div =
+        (float)clock_get_hz(clk_sys) /
+        pio_frequency_hz;
+
+    sm_config_set_clkdiv(&c, div);
+
+    pio_sm_init(
+        pio,
+        sm,
+        offset,
+        &c
+    );
+
+    pio_sm_set_enabled(
+        pio,
+        sm,
+        true
+    );
+}
+%}
