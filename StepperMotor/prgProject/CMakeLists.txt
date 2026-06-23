@@ -12,6 +12,8 @@ pico_sdk_init()
 add_executable(template_motion_project
     main.cpp
 
+    ../FunctionBlocks/HomeSequenceFunctionBlock.cpp
+
     ../src/srcStepper/AdvanceStepperAxis.cpp
     ../src/srcStepper/StepperPioPulseEngine.cpp
 
@@ -21,6 +23,7 @@ add_executable(template_motion_project
 )
 
 target_include_directories(template_motion_project PRIVATE
+    ../FunctionBlocks
     ../lib/objStepper
     ../lib/objMotion
 )
