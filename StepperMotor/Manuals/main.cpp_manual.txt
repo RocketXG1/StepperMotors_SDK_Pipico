@@ -1,990 +1,648 @@
-MANUAL DETALLADO: prgProject/main.cpp
-=====================================
+MANUAL DETALLADO Y ACTUALIZADO: StepperMotor/prgProject/main.cpp
+=================================================================
 
-Finalidad: Este archivo funciona como ejemplo/aplicación principal que instancia configuración, ejes, motor PIO y controlador.
+Objetivo del archivo
+--------------------
+`main.cpp` es el punto de entrada de la aplicación de ejemplo para Raspberry Pi Pico/Pico SDK. La versión actual ya no define manualmente las configuraciones de ejes dentro del código principal; ahora carga una receta de máquina desde una microSD y, si esa carga falla o la receta es inválida, usa una receta embebida por defecto como respaldo seguro de demostración. Después crea el motor de pulsos PIO, construye dinámicamente los objetos de eje sobre memoria estática, crea el controlador de movimiento, ejecuta HOME, realiza movimientos lineales y prepara una cola de movimientos con suavizado de trayectoria.
 
-Ubicación y relación dentro del proyecto:
-- Ruta original: prgProject/main.cpp
-- Manual generado: Manuals/main.cpp_manual.txt
-- Dependencias declaradas por include: pico/stdlib.h, stdio.h, StepperAxisConfig.h, AdvanceStepperAxis.h, StepperPioPulseEngine.h, AdvanceMotionController.h, HomeSequenceFunctionBlock.h
-- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+Dependencias incluidas
+----------------------
+- `pico/stdlib.h`: funciones base del Pico SDK (`stdio_init_all`, `sleep_ms`, `tight_loop_contents`, tipos `uint`, etc.).
+- `<new>`: habilita placement new para construir objetos `AdvanceStepperAxis` dentro de un buffer estático preasignado.
+- `<stdio.h>`: habilita `printf` para mensajes por consola/USB serial.
+- `StepperAxisConfig.h`: estructura de configuración eléctrica, cinemática, límites y HOME de cada eje.
+- `AdvanceStepperAxis.h`: clase que representa un eje físico y convierte posiciones entre mm y pasos.
+- `StepperPioPulseEngine.h`: clase que genera pulsos STEP usando PIO.
+- `AdvanceMotionController.h`: controlador que coordina varios ejes, planifica y ejecuta movimientos.
+- `HomeSequenceFunctionBlock.h`: bloque funcional que valida, configura y ejecuta la secuencia HOME.
+- `MachineRecipe.h`: estructuras `MachineRecipe`, `MachineRecipeAxis` y parser de recetas.
+- `SdRecipeStorage.h`: acceso a microSD y ruta por defecto `DEFAULT_RECIPE_PATH`.
+- `DefaultRecipe.h`: texto de receta embebida `DEFAULT_MACHINE_RECIPE_TEXT` usado como fallback.
 
-Forma de uso o instanciación esperada:
-- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
-- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
-- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
-- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
+Objetos principales instanciados
+--------------------------------
+1. `MachineRecipe recipe`: contenedor de configuración parseada: versión, ejes, cantidad de ejes y orden HOME.
+2. `SdRecipeStorage storage`: lector de microSD configurado con `SdSpiConfig::createDefault()`.
+3. `MachineRecipeParser parser`: interpreta el texto de receta y rellena `MachineRecipe`.
+4. `StepperPioPulseEngine pulseEngine`: genera pulsos STEP para hasta 8 pines consecutivos desde GPIO 2.
+5. `axisStorage`: matriz de bytes alineada para alojar objetos `AdvanceStepperAxis` sin usar heap dinámico tradicional.
+6. `AdvanceStepperAxis* axes[]`: arreglo de punteros a los ejes construidos.
+7. `AdvanceMotionController motion`: controlador multieje que recibe los punteros de ejes, la cantidad real de ejes y el motor PIO.
 
-Descripción línea a línea:
+Flujo general de ejecución
+--------------------------
+1. Inicializa la consola serial y espera 2 segundos.
+2. Carga la receta desde `0:/config/axes.txt` en microSD.
+3. Si no puede leer microSD, o si el texto leído no parsea correctamente, intenta usar la receta embebida.
+4. Si tampoco puede parsear la receta embebida, queda detenido en un bucle infinito seguro.
+5. Configura el generador PIO de pulsos STEP.
+6. Construye un objeto `AdvanceStepperAxis` por cada eje descrito en la receta.
+7. Crea el `AdvanceMotionController`.
+8. Ejecuta HOME según el orden especificado en la receta; si no hay orden, usa el orden por defecto del controlador.
+9. Mueve a una posición segura posterior al HOME.
+10. Ejecuta un movimiento lineal directo.
+11. Habilita suavizado de trayectoria y prepara una cola de tres movimientos lineales.
+12. Entra en un bucle infinito llamando `motion.update()` para mantener vivo el planificador/ejecutor.
+
+Métodos y funciones definidos o usados
+--------------------------------------
+- `loadRecipeFromMicroSdOrFallback(MachineRecipe& recipe)`: función estática local que llena `recipe` desde microSD o desde receta embebida.
+- `executeRecipeHomeSequence(AdvanceMotionController& motion, const MachineRecipe& recipe)`: adapta el arreglo `homeOrder` de la receta a la interfaz de `executeHomeSequence`, que acepta `std::initializer_list`.
+- `stdio_init_all()`: inicializa la E/S estándar del Pico SDK.
+- `sleep_ms(2000)`: pausa el arranque para permitir abrir el monitor serial.
+- `SdSpiConfig::createDefault()`: devuelve la configuración SPI por defecto para la microSD.
+- `storage.begin()`: inicializa el subsistema de microSD.
+- `storage.readTextFile(...)`: lee el archivo de receta a un buffer de texto.
+- `storage.end()`: libera/cierra el acceso a microSD.
+- `parser.parse(...)`: valida y transforma texto de receta en `MachineRecipe`.
+- `parser.getLastError()` y `storage.getLastError()`: devuelven diagnóstico textual del último error.
+- `executeHomeSequence(...)`: bloque funcional de HOME por nombres de ejes.
+- `motion.init()`: inicializa hardware/controlador cuando se usa el HOME por defecto.
+- `motion.homeAll()`: ejecuta HOME de todos los ejes.
+- `motion.moveToSafePositionAfterHome(...)`: movimiento seguro posterior a HOME.
+- `motion.moveLinearTo(...)`: movimiento lineal directo a una posición objetivo.
+- `motion.configurePathSmoothing(...)`: configura mezcla/suavizado entre segmentos.
+- `motion.clearMotionQueue()`: limpia la cola de movimientos.
+- `motion.queueLinearTo(...)`: añade movimientos lineales a la cola.
+- `motion.prepareQueuedMoves()`: planifica y valida la cola antes de ejecutarla.
+- `motion.isBusy()` y `motion.update()`: consultan/avanzan la ejecución de movimiento.
+- `motion.emergencyStop()`: detención de emergencia ante error de movimiento o planificación.
+- `tight_loop_contents()`: función del Pico SDK para bucles intencionalmente vacíos.
+
+Explicación línea a línea
+-------------------------
 Línea 1: `#include "pico/stdlib.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 2: `#include <stdio.h>`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 3: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 4: `#include "StepperAxisConfig.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 5: `#include "AdvanceStepperAxis.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 6: `#include "StepperPioPulseEngine.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 7: `#include "AdvanceMotionController.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 8: `#include "HomeSequenceFunctionBlock.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 9: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 10: `int main() {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 11: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 12: `        Inicializa entrada/salida estándar.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 13: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 14: `        Permite usar printf() por USB serial.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 15: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 16: `    stdio_init_all();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 17: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 18: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 19: `        Pequeña espera para dar tiempo a abrir el monitor serial.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 20: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 21: `    sleep_ms(2000);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 22: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 23: `    printf("\nStarting motion project...\n");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 24: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 25: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 26: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 27: `        PIO PARA PULSOS STEP`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 28: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 29: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 30: `        GPIO 2 = STEP X`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 31: `        GPIO 3 = STEP Y`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 32: `        GPIO 4 = STEP Z`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 33: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 34: `        Como el PIO está configurado para 8 pines STEP consecutivos:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 35: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 36: `        GPIO 2 a GPIO 9 quedan reservados como posibles pines STEP.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 37: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 38: `    StepperPioPulseEngine pulseEngine(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 39: `        /* selectedPioBlock */      pio0,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 40: `        /* selectedStateMachine */  0,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 41: `        /* firstStepGpio */         2,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 42: `        /* minStepIntervalUs */     10`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 43: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 44: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 45: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 46: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 47: `        CONFIGURACIÓN EJE X`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 48: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 49: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 50: `    StepperAxisConfig configX =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 51: `        StepperAxisConfig::createBeltDrive(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 52: `            /* stepPin */            2,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 53: `            /* dirPin */             10,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 54: `            /* enablePin */          13,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 55: `            /* enableActiveLow */    true,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 56: `            /* directionInvert */    false,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 57: `            /* motorStepsPerRev */   200,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 58: `            /* microsteps */         16,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 59: `            /* beltPitchMm */        2.0f,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 60: `            /* pulleyTeeth */        20,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 61: `            /* gearRatio */          1.0f,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 62: `            /* maxSpeedMmS */        100.0f,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 63: `            /* accelerationMmS2 */   300.0f`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 64: `        );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 65: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 66: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 67: `        Nombre obligatorio del eje.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 68: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 69: `        Aunque escribas "x", internamente se guarda como "X".`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 70: `        No se permite dejar el nombre como "UNNAMED".`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 71: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 72: `    configX.setAxisName("X");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 73: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 74: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 75: `        HOME X.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 76: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 77: `        homeDirectionPositive = false:`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 78: `        X buscará HOME hacia dirección negativa.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 79: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 80: `    configX.homeEnabled = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 81: `    configX.homePin = 16;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 82: `    configX.homeActiveLow = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 83: `    configX.homeUsePullup = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 84: `    configX.homeDirectionPositive = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 85: `    configX.homeSimulationEnabled = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 86: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 87: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 88: `        Parámetros HOME X.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 89: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 90: `    configX.homingSeekSpeedMmS = 30.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 91: `    configX.homingLatchSpeedMmS = 5.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 92: `    configX.homingBackoffMm = 3.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 93: `    configX.maxHomingTravelMm = 350.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 94: `    configX.homePositionMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 95: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 96: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 97: `        Límites físicos X.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 98: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 99: `    configX.minLimitEnabled = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 100: `    configX.minLimitPin = 17;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 101: `    configX.minLimitActiveLow = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 102: `    configX.minLimitUsePullup = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 103: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 104: `    configX.maxLimitEnabled = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 105: `    configX.maxLimitPin = 18;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 106: `    configX.maxLimitActiveLow = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 107: `    configX.maxLimitUsePullup = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 108: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 109: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 110: `        Límites por software X.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 111: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 112: `    configX.softLimitsEnabled = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 113: `    configX.softLimitMinMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 114: `    configX.softLimitMaxMm = 300.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 115: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 116: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 117: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 118: `        CONFIGURACIÓN EJE Y`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 119: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 120: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 121: `    StepperAxisConfig configY =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 122: `        StepperAxisConfig::createBeltDrive(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 123: `            /* stepPin */            3,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 124: `            /* dirPin */             11,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 125: `            /* enablePin */          14,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 126: `            /* enableActiveLow */    true,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 127: `            /* directionInvert */    false,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 128: `            /* motorStepsPerRev */   200,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 129: `            /* microsteps */         16,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 130: `            /* beltPitchMm */        2.0f,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 131: `            /* pulleyTeeth */        20,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 132: `            /* gearRatio */          1.0f,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 133: `            /* maxSpeedMmS */        100.0f,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 134: `            /* accelerationMmS2 */   300.0f`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 135: `        );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 136: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 137: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 138: `        Nombre obligatorio del eje Y.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 139: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 140: `    configY.setAxisName("Y");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 141: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 142: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 143: `        HOME Y.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 144: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 145: `        homeDirectionPositive = false:`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 146: `        Y buscará HOME hacia dirección negativa.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 147: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 148: `    configY.homeEnabled = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 149: `    configY.homePin = 19;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 150: `    configY.homeActiveLow = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 151: `    configY.homeUsePullup = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 152: `    configY.homeDirectionPositive = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 153: `    configY.homeSimulationEnabled = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 154: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 155: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 156: `        Parámetros HOME Y.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 157: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 158: `    configY.homingSeekSpeedMmS = 30.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 159: `    configY.homingLatchSpeedMmS = 5.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 160: `    configY.homingBackoffMm = 3.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 161: `    configY.maxHomingTravelMm = 350.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 162: `    configY.homePositionMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 163: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 164: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 165: `        Límites físicos Y.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 166: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 167: `    configY.minLimitEnabled = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 168: `    configY.minLimitPin = 20;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 169: `    configY.minLimitActiveLow = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 170: `    configY.minLimitUsePullup = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 171: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 172: `    configY.maxLimitEnabled = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 173: `    configY.maxLimitPin = 21;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 174: `    configY.maxLimitActiveLow = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 175: `    configY.maxLimitUsePullup = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 176: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 177: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 178: `        Límites por software Y.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 179: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 180: `    configY.softLimitsEnabled = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 181: `    configY.softLimitMinMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 182: `    configY.softLimitMaxMm = 300.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 183: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 184: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 185: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 186: `        CONFIGURACIÓN EJE Z`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 187: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 188: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 189: `        Eje Z configurado con husillo.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 190: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 191: `        screwPitchMm = 8.0f:`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 192: `        Una vuelta completa del husillo equivale a 8 mm.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 193: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 194: `    StepperAxisConfig configZ =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 195: `        StepperAxisConfig::createLeadScrew(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 196: `            /* stepPin */            4,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 197: `            /* dirPin */             12,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 198: `            /* enablePin */          15,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 199: `            /* enableActiveLow */    true,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 200: `            /* directionInvert */    false,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 201: `            /* motorStepsPerRev */   200,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 202: `            /* microsteps */         16,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 203: `            /* screwPitchMm */       8.0f,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 204: `            /* gearRatio */          1.0f,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 205: `            /* maxSpeedMmS */        20.0f,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 206: `            /* accelerationMmS2 */   100.0f`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 207: `        );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 208: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 209: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 210: `        Nombre obligatorio del eje Z.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 211: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 212: `    configZ.setAxisName("Z");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 213: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 214: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 215: `        HOME Z.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 216: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 217: `        homeDirectionPositive = true:`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 218: `        Z buscará HOME hacia dirección positiva.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 219: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 220: `        Si tu HOME de Z está hacia abajo o negativo,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 221: `        cambia esto a false.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 222: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 223: `    configZ.homeEnabled = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 224: `    configZ.homePin = 22;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 225: `    configZ.homeActiveLow = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 226: `    configZ.homeUsePullup = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 227: `    configZ.homeDirectionPositive = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 228: `    configZ.homeSimulationEnabled = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 229: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 230: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 231: `        Parámetros HOME Z.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 232: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 233: `    configZ.homingSeekSpeedMmS = 10.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 234: `    configZ.homingLatchSpeedMmS = 2.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 235: `    configZ.homingBackoffMm = 2.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 236: `    configZ.maxHomingTravelMm = 120.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 237: `    configZ.homePositionMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 238: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 239: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 240: `        Límites físicos Z.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 241: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 242: `    configZ.minLimitEnabled = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 243: `    configZ.minLimitPin = 26;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 244: `    configZ.minLimitActiveLow = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 245: `    configZ.minLimitUsePullup = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 246: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 247: `    configZ.maxLimitEnabled = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 248: `    configZ.maxLimitPin = 27;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 249: `    configZ.maxLimitActiveLow = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 250: `    configZ.maxLimitUsePullup = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 251: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 252: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 253: `        Límites por software Z.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 254: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 255: `    configZ.softLimitsEnabled = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 256: `    configZ.softLimitMinMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 257: `    configZ.softLimitMaxMm = 100.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 258: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 259: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 260: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 261: `        CREAR INSTANCIAS DE EJES`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 262: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 263: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 264: `        Cada objeto representa un eje físico.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 265: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 266: `    AdvanceStepperAxis axisX(configX);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 267: `    AdvanceStepperAxis axisY(configY);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 268: `    AdvanceStepperAxis axisZ(configZ);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 269: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 270: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 271: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 272: `        SIMULACIÓN DE HOME PARA PRUEBAS SIN SENSORES`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 273: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 274: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 275: `        Para probar sin sensores físicos, puedes descomentar este bloque.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 276: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 277: `        setHomeSimulationEnabled(true):`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 278: `        El eje ya no lee el pin HOME físico.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 279: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 280: `        setSimulatedHomeActive(true):`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 281: `        El programa cree que el sensor HOME ya está activo.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 282: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 283: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 284: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 285: `    axisX.setHomeSimulationEnabled(true);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 286: `    axisY.setHomeSimulationEnabled(true);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 287: `    axisZ.setHomeSimulationEnabled(true);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 288: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 289: `    axisX.setSimulatedHomeActive(true);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 290: `    axisY.setSimulatedHomeActive(true);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 291: `    axisZ.setSimulatedHomeActive(true);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 292: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 293: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 294: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 295: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 296: `        ARREGLO DE EJES`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 297: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 298: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 299: `        El controlador necesita recibir los ejes en un arreglo.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 300: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 301: `        Aunque el HOME ya puede configurarse por nombre,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 302: `        este arreglo sigue definiendo el orden interno.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 303: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 304: `        axes[0] = X`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 305: `        axes[1] = Y`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 306: `        axes[2] = Z`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 307: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 308: `    AdvanceStepperAxis* axes[] = {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 309: `        &axisX,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 310: `        &axisY,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 311: `        &axisZ`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 312: `    };`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 313: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 314: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 315: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 316: `        CREAR CONTROLADOR DE MOVIMIENTO`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 317: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 318: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 319: `    AdvanceMotionController motion(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 320: `        axes,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 321: `        3,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 322: `        pulseEngine`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 323: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 324: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 325: `    executeHomeSequence(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 326: `        motion,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 327: `        {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 328: `            "Z",`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 329: `            "X",`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 330: `            "Y"`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 331: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 332: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 333: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 334: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 335: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 336: `        POSICIÓN SEGURA DESPUÉS DE HOME`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 337: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 338: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 339: `        Solo se permite si todos los ejes hicieron HOME.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 340: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 341: `        X = 0 mm`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 342: `        Y = 0 mm`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 343: `        Z = 10 mm`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 344: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 345: `    bool safeMoveOk =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 346: `        motion.moveToSafePositionAfterHome(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 347: `            {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 348: `                0.0f,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 349: `                0.0f,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 350: `                10.0f`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 351: `            },`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 352: `            /* speedMmS */ 20.0f`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 353: `        );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 354: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 355: `    if (!safeMoveOk) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 356: `        printf("ERROR: Safe move failed.\n");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 357: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 358: `        motion.emergencyStop();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 359: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 360: `        while (true) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 361: `            tight_loop_contents();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 362: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 363: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 364: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 365: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 366: `        Esperar a que termine el movimiento seguro.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 367: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 368: `    while (motion.isBusy()) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 369: `        motion.update();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 370: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 371: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 372: `    printf("Safe position reached.\n");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 373: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 374: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 375: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 376: `        EJEMPLO A: UN SOLO MOVIMIENTO DIRECTO`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 377: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 378: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 379: `        moveLinearTo() es directo:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 380: `        - No usa cola.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 381: `        - No usa suavizado de trayectoria.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 382: `        - Sí usa perfil trapezoidal, aceleración, límites y PIO.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 383: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 384: `    bool directMoveOk =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 385: `        motion.moveLinearTo(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 386: `            {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 387: `                50.0f,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 388: `                50.0f,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 389: `                10.0f`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 390: `            },`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 391: `            /* requestedSpeedMmS */ 30.0f`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 392: `        );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 393: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 394: `    if (!directMoveOk) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 395: `        printf("ERROR: Direct move failed.\n");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 396: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 397: `        motion.emergencyStop();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 398: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 399: `        while (true) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 400: `            tight_loop_contents();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 401: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 402: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 403: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 404: `    while (motion.isBusy()) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 405: `        motion.update();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 406: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 407: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 408: `    printf("Direct move completed.\n");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 409: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 410: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 411: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 412: `        EJEMPLO B: MOVIMIENTOS EN COLA CON SUAVIZADO`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 413: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 414: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 415: `        configurePathSmoothing() define los parámetros de suavizado.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 416: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 417: `        prepareQueuedMoves() sí usa esos parámetros para detectar`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 418: `        esquinas y generar segmentos suaves.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 419: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 420: `    motion.configurePathSmoothing(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 421: `        /* enabled */              true,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 422: `        /* blendDistanceMm */      2.0f,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 423: `        /* blendSegmentLengthMm */ 0.5f,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 424: `        /* maxBlendSegments */     12,`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 425: `        /* blendSpeedScale */      0.70f`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 426: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 427: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 428: `    motion.clearMotionQueue();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 429: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 430: `    motion.queueLinearTo(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 431: `        {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 432: `            100.0f,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 433: `            0.0f,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 434: `            10.0f`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 435: `        },`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 436: `        /* requestedSpeedMmS */ 40.0f`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 437: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 438: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 439: `    motion.queueLinearTo(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 440: `        {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 441: `            100.0f,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 442: `            100.0f,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 443: `            10.0f`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 444: `        },`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 445: `        /* requestedSpeedMmS */ 40.0f`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 446: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 447: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 448: `    motion.queueLinearTo(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 449: `        {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 450: `            200.0f,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 451: `            100.0f,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 452: `            10.0f`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 453: `        },`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 454: `        /* requestedSpeedMmS */ 40.0f`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 455: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 456: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 457: `    bool queueOk =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 458: `        motion.prepareQueuedMoves();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 459: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 460: `    if (!queueOk) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 461: `        printf("ERROR: Could not prepare movement queue.\n");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 462: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 463: `        motion.emergencyStop();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 464: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 465: `        while (true) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 466: `            tight_loop_contents();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 467: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 468: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 469: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 470: `    printf("Movement queue ready.\n");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 471: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 472: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 473: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 474: `        LOOP PRINCIPAL`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 475: `        ------------------------------------------------------------`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 476: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 477: `        update() debe llamarse constantemente.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 478: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 479: `        Aquí se ejecutan los movimientos de la cola.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 480: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 481: `    while (true) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 482: `        motion.update();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 483: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 484: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
+  Importa la biblioteca estándar del Pico SDK. Es necesaria para `stdio_init_all`, `sleep_ms`, `tight_loop_contents`, `uint`, `pio0` indirectamente por dependencias y tipos de tiempo/GPIO usados por las clases.
 
-Resumen funcional:
-- prgProject/main.cpp participa en el SDK aportando ejemplo/aplicación principal que instancia configuración, ejes, motor PIO y controlador.
-- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.
+Línea 2: `#include <new>`
+  Importa las utilidades C++ de construcción de objetos. En este archivo se usa para placement new: `new (axisStorage[axisIndex]) AdvanceStepperAxis(...)`.
+
+Línea 3: `#include <stdio.h>`
+  Importa `printf`, usado para reportar estado, advertencias y errores por consola serial.
+
+Línea 4: línea en blanco.
+  Separa includes del SDK/C++ de los includes propios del proyecto para mejorar legibilidad.
+
+Línea 5: `#include "StepperAxisConfig.h"`
+  Incluye el tipo de configuración de cada eje. Aunque `main.cpp` ya no crea configuraciones manuales, las recetas contienen `StepperAxisConfig` dentro de cada `MachineRecipeAxis`.
+
+Línea 6: `#include "AdvanceStepperAxis.h"`
+  Incluye la clase que se instancia para cada eje físico definido en la receta.
+
+Línea 7: `#include "StepperPioPulseEngine.h"`
+  Incluye la clase responsable de emitir pulsos STEP mediante PIO.
+
+Línea 8: `#include "AdvanceMotionController.h"`
+  Incluye el controlador que coordina todos los ejes y ejecuta movimientos lineales, HOME, cola y suavizado.
+
+Línea 9: `#include "HomeSequenceFunctionBlock.h"`
+  Incluye `executeHomeSequence` y códigos `HOME_SEQUENCE_*`, usados para la secuencia HOME configurable.
+
+Línea 10: `#include "MachineRecipe.h"`
+  Incluye `MachineRecipe`, límites máximos (`MACHINE_RECIPE_MAX_AXES`, `MACHINE_RECIPE_MAX_TEXT_LENGTH`) y `MachineRecipeParser`.
+
+Línea 11: `#include "SdRecipeStorage.h"`
+  Incluye `SdRecipeStorage`, `SdSpiConfig` y `DEFAULT_RECIPE_PATH` para leer la receta desde microSD.
+
+Línea 12: `#include "DefaultRecipe.h"`
+  Incluye la receta embebida `DEFAULT_MACHINE_RECIPE_TEXT`, usada cuando la microSD no está disponible o falla la receta externa.
+
+Línea 13: línea en blanco.
+  Separa includes de la primera función local.
+
+Línea 14: `static bool loadRecipeFromMicroSdOrFallback(MachineRecipe& recipe) {`
+  Define una función auxiliar con enlace interno (`static`) que intenta cargar una receta en el parámetro de salida `recipe`. Devuelve `true` si obtiene una receta válida y `false` si tanto microSD como fallback fallan.
+
+Línea 15: `static char recipeText[MACHINE_RECIPE_MAX_TEXT_LENGTH];`
+  Declara un buffer estático de texto para leer la receta. Al ser `static`, evita consumir pila con un arreglo de hasta 8192 bytes y mantiene almacenamiento de duración global dentro de la función.
+
+Línea 16: línea en blanco.
+  Separa el buffer de los objetos de soporte.
+
+Línea 17: `SdRecipeStorage storage(SdSpiConfig::createDefault());`
+  Instancia `storage` usando la configuración SPI por defecto. Este objeto encapsula inicialización, lectura y cierre del acceso a microSD.
+
+Línea 18: `MachineRecipeParser parser;`
+  Instancia el parser que validará el texto de receta y rellenará la estructura `MachineRecipe`.
+
+Línea 19: línea en blanco.
+  Separa instanciación de objetos del primer mensaje de estado.
+
+Línea 20: `printf("Loading machine recipe from microSD: %s\n", DEFAULT_RECIPE_PATH);`
+  Informa por consola que se intentará leer la receta desde la ruta por defecto, normalmente `0:/config/axes.txt`.
+
+Línea 21: línea en blanco.
+  Separa el mensaje del bloque condicional de lectura.
+
+Línea 22: `if (storage.begin() && storage.readTextFile(DEFAULT_RECIPE_PATH, recipeText, sizeof(recipeText))) {`
+  Inicializa la microSD y, solo si eso fue exitoso, lee el archivo de receta en `recipeText`. El operador `&&` evita intentar leer si `begin()` falla.
+
+Línea 23: `storage.end();`
+  Cierra/libera la microSD después de una lectura exitosa. Se hace antes de parsear porque el texto ya está en RAM.
+
+Línea 24: línea en blanco.
+  Separa cierre de almacenamiento del parseo.
+
+Línea 25: `if (parser.parse(recipeText, recipe)) {`
+  Intenta convertir el texto leído en una `MachineRecipe` válida. Si parsea correctamente, `recipe` queda lista para crear ejes y HOME.
+
+Línea 26: `printf("Recipe loaded from microSD. Axes: %u\n", recipe.axisCount);`
+  Reporta que se cargó la receta externa e imprime cuántos ejes activos contiene.
+
+Línea 27: `return true;`
+  Sale de la función indicando éxito. El programa usará la configuración proveniente de la microSD.
+
+Línea 28: `}`
+  Cierra el `if` de parseo exitoso.
+
+Línea 29: línea en blanco.
+  Separa el camino exitoso del mensaje de error.
+
+Línea 30: `printf("ERROR: microSD recipe is invalid: %s\n", parser.getLastError());`
+  Si el archivo se leyó pero no es válido, informa el error del parser. Después continuará hacia el fallback embebido.
+
+Línea 31: `} else {`
+  Abre el caso alterno: la microSD no inicializó o no se pudo leer el archivo.
+
+Línea 32: `printf("WARNING: microSD recipe not available: %s\n", storage.getLastError());`
+  Reporta advertencia con el último error del almacenamiento. No detiene el sistema todavía porque existe fallback.
+
+Línea 33: `storage.end();`
+  Garantiza cierre/liberación del almacenamiento también cuando falló `begin()` o `readTextFile()`.
+
+Línea 34: `}`
+  Cierra el bloque alterno de error/advertencia de microSD.
+
+Línea 35: línea en blanco.
+  Separa el intento microSD del intento fallback.
+
+Línea 36: `printf("Using embedded default recipe as a safe demonstration fallback.\n");`
+  Informa que se usará la receta embebida para mantener una demostración segura aun sin microSD válida.
+
+Línea 37: línea en blanco.
+  Separa mensaje del parseo fallback.
+
+Línea 38: `if (!parser.parse(DEFAULT_MACHINE_RECIPE_TEXT, recipe)) {`
+  Intenta parsear la receta embebida. El `!` invierte el resultado para entrar al bloque solo si también falla.
+
+Línea 39: `printf("ERROR: embedded default recipe is invalid: %s\n", parser.getLastError());`
+  Reporta un error crítico: ni la receta externa ni la embebida son válidas.
+
+Línea 40: `return false;`
+  Devuelve fallo al llamador. En `main`, esto provoca un bucle infinito seguro.
+
+Línea 41: `}`
+  Cierra el bloque de fallo del fallback.
+
+Línea 42: línea en blanco.
+  Separa validación fallback del retorno exitoso.
+
+Línea 43: `return true;`
+  Indica que la receta embebida fue parseada correctamente y `recipe` contiene datos utilizables.
+
+Línea 44: `}`
+  Cierra `loadRecipeFromMicroSdOrFallback`.
+
+Línea 45: línea en blanco.
+  Separa funciones auxiliares.
+
+Línea 46: `static int executeRecipeHomeSequence(`
+  Inicia una segunda función auxiliar local que devuelve un código de resultado HOME (`HOME_SEQUENCE_OK` o error).
+
+Línea 47: `AdvanceMotionController& motion,`
+  Primer parámetro: referencia al controlador de movimiento ya construido. Se pasa por referencia para operar sobre el objeto real.
+
+Línea 48: `const MachineRecipe& recipe`
+  Segundo parámetro: receta solo lectura. Se usa para consultar `homeOrderCount` y `homeOrder` sin modificarla.
+
+Línea 49: `) {`
+  Cierra la lista de parámetros y abre el cuerpo de la función.
+
+Línea 50: `switch (recipe.homeOrderCount) {`
+  Selecciona cómo llamar a `executeHomeSequence` según la cantidad de nombres de eje en la receta. Esto es necesario porque `std::initializer_list` debe construirse con una cantidad fija de elementos en el código.
+
+Líneas 51-52: `case 1:` / `return executeHomeSequence(motion, { recipe.homeOrder[0] });`
+  Si hay 1 eje en el orden HOME, ejecuta HOME solo con ese nombre.
+
+Líneas 53-54: `case 2:` / llamada con `homeOrder[0]` y `homeOrder[1]`.
+  Si hay 2 ejes, crea una lista de 2 nombres y delega al bloque funcional.
+
+Líneas 55-56: `case 3:` / llamada con 3 nombres.
+  Caso típico para máquinas XYZ: ejecuta HOME en el orden de tres ejes indicado por la receta.
+
+Líneas 57-58: `case 4:` / llamada con 4 nombres.
+  Permite máquinas de cuatro ejes.
+
+Líneas 59-60: `case 5:` / llamada con 5 nombres.
+  Permite máquinas de cinco ejes.
+
+Líneas 61-62: `case 6:` / llamada con 6 nombres.
+  Permite máquinas de seis ejes.
+
+Líneas 63-64: `case 7:` / llamada con 7 nombres.
+  Permite máquinas de siete ejes.
+
+Líneas 65-66: `case 8:` / llamada con 8 nombres.
+  Permite el máximo definido por `MACHINE_RECIPE_MAX_HOME_ORDER` y por el controlador.
+
+Línea 67: `default:`
+  Atiende cualquier conteo no cubierto, especialmente 0 cuando la receta no define `homeOrder`.
+
+Línea 68: `printf("WARNING: recipe has no homeOrder. Using controller default HOME order.\n");`
+  Informa que se usará el orden HOME por defecto del controlador porque la receta no especificó uno válido.
+
+Línea 69: `motion.init();`
+  Inicializa el controlador y hardware antes de ejecutar HOME por el camino predeterminado.
+
+Línea 70: `return motion.homeAll() ? HOME_SEQUENCE_OK : HOME_SEQUENCE_ERROR_HOMING_FAILED;`
+  Ejecuta HOME en todos los ejes. Usa operador ternario: si `homeAll()` devuelve `true`, retorna éxito; si no, retorna error de homing.
+
+Línea 71: `}`
+  Cierra el `switch`.
+
+Línea 72: `}`
+  Cierra `executeRecipeHomeSequence`.
+
+Línea 73: línea en blanco.
+  Separa funciones auxiliares de la función principal.
+
+Línea 74: `int main() {`
+  Punto de entrada de la aplicación embebida. Devuelve `int`, aunque en firmware normalmente nunca retorna.
+
+Línea 75: `stdio_init_all();`
+  Inicializa la salida/entrada estándar para permitir `printf` por USB serial u otros backends configurados.
+
+Línea 76: `sleep_ms(2000);`
+  Espera 2 segundos para dar tiempo al host a abrir el monitor serial después del arranque de la placa.
+
+Línea 77: línea en blanco.
+  Separa inicialización básica del mensaje de arranque.
+
+Línea 78: `printf("\nStarting motion project with microSD recipe loader...\n");`
+  Mensaje inicial que confirma que esta versión usa cargador de receta desde microSD.
+
+Línea 79: línea en blanco.
+  Separa mensaje del objeto receta.
+
+Línea 80: `MachineRecipe recipe;`
+  Declara la instancia principal de receta. Esta estructura contendrá ejes, conteo de ejes y orden HOME.
+
+Línea 81: `if (!loadRecipeFromMicroSdOrFallback(recipe)) {`
+  Intenta llenar `recipe`. Si la función devuelve `false`, entra al bloque de parada segura.
+
+Línea 82: `while (true) {`
+  Inicia un bucle infinito porque no hay configuración válida para mover motores con seguridad.
+
+Línea 83: `tight_loop_contents();`
+  Marca el cuerpo del bucle como una espera intencional para el SDK/herramientas, sin hacer trabajo activo.
+
+Línea 84: `}`
+  Cierra el bucle infinito de fallo de receta.
+
+Línea 85: `}`
+  Cierra el `if` de fallo de carga.
+
+Línea 86: línea en blanco.
+  Separa carga de receta de la configuración del generador de pulsos.
+
+Línea 87: `StepperPioPulseEngine pulseEngine(`
+  Instancia el motor de pulsos PIO que se pasará por referencia al controlador de movimiento.
+
+Línea 88: `/* selectedPioBlock */      pio0,`
+  Selecciona el bloque PIO 0 de la RP2040/RP2350 para ejecutar el programa generador de pulsos.
+
+Línea 89: `/* selectedStateMachine */  0,`
+  Selecciona la máquina de estado 0 dentro de `pio0`.
+
+Línea 90: `/* firstStepGpio */         2,`
+  Define GPIO 2 como primer pin STEP del grupo. El motor PIO trabaja con un grupo de hasta 8 pines STEP consecutivos.
+
+Línea 91: `/* minStepIntervalUs */     10`
+  Define 10 microsegundos como intervalo mínimo entre eventos STEP, límite usado para proteger la frecuencia máxima de pulsos.
+
+Línea 92: `);`
+  Cierra la construcción de `pulseEngine`.
+
+Línea 93: línea en blanco.
+  Separa el motor de pulsos de la memoria de ejes.
+
+Línea 94: `alignas(AdvanceStepperAxis) static unsigned char axisStorage[MACHINE_RECIPE_MAX_AXES][sizeof(AdvanceStepperAxis)];`
+  Reserva memoria estática cruda para hasta 8 objetos `AdvanceStepperAxis`, con alineación correcta para esa clase. Esto evita depender de asignación dinámica de heap en firmware.
+
+Línea 95: `AdvanceStepperAxis* axes[MACHINE_RECIPE_MAX_AXES];`
+  Declara un arreglo de punteros. Cada elemento apuntará al eje construido en el buffer correspondiente de `axisStorage`.
+
+Línea 96: línea en blanco.
+  Separa memoria de construcción del ciclo de construcción.
+
+Línea 97: `for (uint axisIndex = 0; axisIndex < recipe.axisCount; axisIndex++) {`
+  Recorre todos los ejes definidos por la receta. `axisIndex` va de 0 a `recipe.axisCount - 1`.
+
+Línea 98: `axes[axisIndex] = new (axisStorage[axisIndex]) AdvanceStepperAxis(recipe.axes[axisIndex].config);`
+  Construye un objeto `AdvanceStepperAxis` dentro de memoria preasignada usando placement new. La configuración proviene de `recipe.axes[axisIndex].config`.
+
+Línea 99: `printf(`
+  Inicia una llamada multilínea a `printf` para reportar el eje recién cargado.
+
+Línea 100: `"Axis %u loaded: %s STEP=%u DIR=%u EN=%u\n",`
+  Formato del mensaje: índice, nombre, pin STEP, pin DIR y pin ENABLE.
+
+Línea 101: `axisIndex,`
+  Primer argumento del formato: número de eje dentro del arreglo.
+
+Línea 102: `axes[axisIndex]->getAxisName(),`
+  Segundo argumento: nombre lógico del eje, obtenido desde el objeto `AdvanceStepperAxis`.
+
+Línea 103: `axes[axisIndex]->getStepPin(),`
+  Tercer argumento: pin STEP configurado para ese eje.
+
+Línea 104: `axes[axisIndex]->getDirPin(),`
+  Cuarto argumento: pin DIR configurado para ese eje.
+
+Línea 105: `axes[axisIndex]->getEnablePin()`
+  Quinto argumento: pin ENABLE configurado para ese eje.
+
+Línea 106: `);`
+  Cierra la llamada a `printf`.
+
+Línea 107: `}`
+  Cierra el ciclo que construye y reporta los ejes.
+
+Línea 108: línea en blanco.
+  Separa construcción de ejes de la construcción del controlador.
+
+Línea 109: `AdvanceMotionController motion(`
+  Instancia el controlador principal de movimiento.
+
+Línea 110: `axes,`
+  Pasa el arreglo de punteros a ejes.
+
+Línea 111: `recipe.axisCount,`
+  Pasa la cantidad real de ejes activos definidos por la receta.
+
+Línea 112: `pulseEngine`
+  Pasa el motor de pulsos PIO por referencia para que el controlador emita los pasos.
+
+Línea 113: `);`
+  Cierra la construcción de `motion`.
+
+Línea 114: línea en blanco.
+  Separa creación del controlador de la secuencia HOME.
+
+Línea 115: `executeRecipeHomeSequence(motion, recipe);`
+  Ejecuta HOME usando el orden especificado por la receta. Importante: el valor devuelto no se comprueba aquí, por lo que una mejora futura sería validar el resultado antes de mover.
+
+Línea 116: línea en blanco.
+  Separa HOME del primer movimiento seguro.
+
+Línea 117: `bool safeMoveOk =`
+  Declara una bandera que recibirá si el movimiento seguro fue aceptado/iniciado correctamente.
+
+Línea 118: `motion.moveToSafePositionAfterHome(`
+  Solicita al controlador moverse a una posición segura después de HOME.
+
+Líneas 119-123: lista `{ 0.0f, 0.0f, 10.0f }`.
+  Define posiciones objetivo en milímetros para los primeros tres ejes: X=0, Y=0, Z=10. Si la receta tiene exactamente tres ejes, coincide con XYZ; en máquinas con otra cantidad debe revisarse que el controlador acepte la dimensión solicitada.
+
+Línea 124: `/* speedMmS */ 20.0f`
+  Velocidad solicitada para el movimiento seguro: 20 mm/s.
+
+Línea 125: `);`
+  Cierra la llamada a `moveToSafePositionAfterHome`.
+
+Línea 126: línea en blanco.
+  Separa solicitud de movimiento de la validación de error.
+
+Línea 127: `if (!safeMoveOk) {`
+  Si el movimiento seguro no pudo iniciarse o validarse, entra al manejo de error.
+
+Línea 128: `printf("ERROR: Safe move failed.\n");`
+  Reporta fallo del movimiento seguro.
+
+Línea 129: `motion.emergencyStop();`
+  Ejecuta parada de emergencia para dejar el sistema en condición segura.
+
+Línea 130: `while (true) {`
+  Inicia bucle infinito para no continuar con movimientos posteriores tras el error.
+
+Línea 131: `tight_loop_contents();`
+  Cuerpo de espera intencional.
+
+Línea 132: `}`
+  Cierra el bucle infinito de error de movimiento seguro.
+
+Línea 133: `}`
+  Cierra el `if` de error.
+
+Línea 134: línea en blanco.
+  Separa validación de la espera de finalización.
+
+Línea 135: `while (motion.isBusy()) {`
+  Mientras el controlador indique que hay movimiento activo, continúa actualizando.
+
+Línea 136: `motion.update();`
+  Avanza el planificador/ejecutor: genera pasos, actualiza perfiles y progresa el movimiento.
+
+Línea 137: `}`
+  Cierra el bucle de espera del movimiento seguro.
+
+Línea 138: línea en blanco.
+  Separa finalización del mensaje.
+
+Línea 139: `printf("Safe position reached.\n");`
+  Informa que la posición segura fue alcanzada.
+
+Línea 140: línea en blanco.
+  Separa el primer movimiento del segundo.
+
+Línea 141: `bool directMoveOk =`
+  Declara una bandera para saber si el movimiento lineal directo fue aceptado.
+
+Línea 142: `motion.moveLinearTo(`
+  Solicita un movimiento lineal coordinado hacia una posición absoluta.
+
+Líneas 143-147: lista `{ 50.0f, 50.0f, 10.0f }`.
+  Define el destino absoluto en milímetros para los primeros tres ejes: X=50, Y=50, Z=10.
+
+Línea 148: `/* requestedSpeedMmS */ 30.0f`
+  Velocidad lineal solicitada: 30 mm/s. El controlador puede limitarla por límites de ejes o motor de pulsos.
+
+Línea 149: `);`
+  Cierra la llamada a `moveLinearTo`.
+
+Línea 150: línea en blanco.
+  Separa solicitud de validación.
+
+Línea 151: `if (!directMoveOk) {`
+  Si el movimiento directo no se pudo preparar/iniciar, entra al manejo de error.
+
+Línea 152: `printf("ERROR: Direct move failed.\n");`
+  Reporta el fallo.
+
+Línea 153: `motion.emergencyStop();`
+  Detiene de emergencia el controlador.
+
+Línea 154: `while (true) {`
+  Evita continuar el programa después del error.
+
+Línea 155: `tight_loop_contents();`
+  Espera intencional dentro del bucle infinito.
+
+Línea 156: `}`
+  Cierra el bucle de error del movimiento directo.
+
+Línea 157: `}`
+  Cierra el `if` de error del movimiento directo.
+
+Línea 158: línea en blanco.
+  Separa validación de espera activa.
+
+Línea 159: `while (motion.isBusy()) {`
+  Espera mientras el movimiento directo esté en ejecución.
+
+Línea 160: `motion.update();`
+  Actualiza el controlador para emitir pasos y avanzar el perfil de movimiento.
+
+Línea 161: `}`
+  Cierra el bucle de espera.
+
+Línea 162: línea en blanco.
+  Separa finalización de mensaje.
+
+Línea 163: `printf("Direct move completed.\n");`
+  Informa que el movimiento directo terminó correctamente.
+
+Línea 164: línea en blanco.
+  Separa movimientos directos de la configuración de trayectoria suavizada.
+
+Línea 165: `motion.configurePathSmoothing(`
+  Configura el suavizado/mezcla entre segmentos para los movimientos en cola.
+
+Línea 166: `/* enabled */              true,`
+  Activa el suavizado de trayectoria.
+
+Línea 167: `/* blendDistanceMm */      2.0f,`
+  Distancia de mezcla alrededor de esquinas: 2 mm.
+
+Línea 168: `/* blendSegmentLengthMm */ 0.5f,`
+  Longitud de cada subsegmento de mezcla: 0.5 mm. Segmentos más cortos aproximan mejor la curva pero aumentan carga de planificación.
+
+Línea 169: `/* maxBlendSegments */     12,`
+  Máximo de segmentos generados para una mezcla.
+
+Línea 170: `/* blendSpeedScale */      0.70f`
+  Escala de velocidad durante la mezcla: 70% de la velocidad solicitada para suavizar cambios de dirección.
+
+Línea 171: `);`
+  Cierra la configuración de suavizado.
+
+Línea 172: línea en blanco.
+  Separa configuración de limpieza de cola.
+
+Línea 173: `motion.clearMotionQueue();`
+  Limpia cualquier movimiento pendiente antes de cargar la nueva ruta.
+
+Línea 174: línea en blanco.
+  Separa limpieza de la primera inserción en cola.
+
+Línea 175: `motion.queueLinearTo(`
+  Añade el primer movimiento lineal a la cola.
+
+Líneas 176-180: lista `{ 100.0f, 0.0f, 10.0f }`.
+  Primer destino en cola: X=100, Y=0, Z=10 mm.
+
+Línea 181: `/* requestedSpeedMmS */ 40.0f`
+  Velocidad solicitada para este segmento: 40 mm/s.
+
+Línea 182: `);`
+  Cierra la primera llamada a `queueLinearTo`.
+
+Línea 183: línea en blanco.
+  Separa segmentos de cola.
+
+Línea 184: `motion.queueLinearTo(`
+  Añade el segundo movimiento lineal a la cola.
+
+Líneas 185-189: lista `{ 100.0f, 100.0f, 10.0f }`.
+  Segundo destino en cola: X=100, Y=100, Z=10 mm.
+
+Línea 190: `/* requestedSpeedMmS */ 40.0f`
+  Velocidad solicitada del segundo segmento: 40 mm/s.
+
+Línea 191: `);`
+  Cierra la segunda llamada a `queueLinearTo`.
+
+Línea 192: línea en blanco.
+  Separa segmentos.
+
+Línea 193: `motion.queueLinearTo(`
+  Añade el tercer movimiento lineal a la cola.
+
+Líneas 194-198: lista `{ 200.0f, 100.0f, 10.0f }`.
+  Tercer destino en cola: X=200, Y=100, Z=10 mm.
+
+Línea 199: `/* requestedSpeedMmS */ 40.0f`
+  Velocidad solicitada del tercer segmento: 40 mm/s.
+
+Línea 200: `);`
+  Cierra la tercera llamada a `queueLinearTo`.
+
+Línea 201: línea en blanco.
+  Separa carga de cola de preparación.
+
+Línea 202: `bool queueOk = motion.prepareQueuedMoves();`
+  Planifica la cola completa, aplicando validaciones y suavizado. Devuelve si la cola pudo prepararse para ejecución.
+
+Línea 203: línea en blanco.
+  Separa preparación de validación de error.
+
+Línea 204: `if (!queueOk) {`
+  Si la cola no pudo planificarse, entra al manejo de error.
+
+Línea 205: `printf("ERROR: Could not prepare movement queue.\n");`
+  Reporta que no fue posible preparar la ruta en cola.
+
+Línea 206: `motion.emergencyStop();`
+  Detiene de emergencia por seguridad.
+
+Línea 207: `while (true) {`
+  Inicia bucle infinito para impedir continuar con una cola inválida.
+
+Línea 208: `tight_loop_contents();`
+  Espera intencional dentro del bucle.
+
+Línea 209: `}`
+  Cierra el bucle infinito de error de cola.
+
+Línea 210: `}`
+  Cierra el `if` de error de cola.
+
+Línea 211: línea en blanco.
+  Separa validación de mensaje final.
+
+Línea 212: `printf("Movement queue ready.\n");`
+  Informa que la cola quedó lista. La ejecución real progresa por llamadas posteriores a `motion.update()`.
+
+Línea 213: línea en blanco.
+  Separa preparación de cola del bucle principal permanente.
+
+Línea 214: `while (true) {`
+  Inicia el bucle principal infinito del firmware. En un microcontrolador, el programa no debe terminar.
+
+Línea 215: `motion.update();`
+  Actualiza continuamente el controlador para ejecutar movimientos planificados, generar pasos cuando corresponda y cargar siguientes bloques.
+
+Línea 216: `}`
+  Cierra el bucle principal infinito.
+
+Línea 217: `}`
+  Cierra `main`. En la práctica no se alcanza porque el bucle de las líneas 214-216 es infinito.
+
+Notas de diseño y recomendaciones
+---------------------------------
+- La actualización principal respecto al manual anterior es que la configuración de ejes dejó de estar codificada directamente en `main.cpp`; ahora se obtiene de `MachineRecipe` mediante microSD o fallback embebido.
+- El uso de placement new sobre `axisStorage` evita fragmentación o dependencia del heap, una práctica conveniente en firmware.
+- El arreglo `axes` tiene capacidad máxima fija, pero solo se construyen `recipe.axisCount` elementos.
+- Las posiciones de ejemplo tienen tres coordenadas. Si se usan recetas con más o menos de tres ejes, conviene revisar que las llamadas con listas de 3 valores sean compatibles con la validación del controlador.
+- `executeRecipeHomeSequence(motion, recipe)` devuelve un código, pero actualmente `main` no lo valida. Si HOME falla, el programa podría seguir intentando movimientos; se recomienda capturar el retorno y detener en caso de error.
+- Las llamadas a `queueLinearTo` no comprueban su retorno individual en este archivo. La validación final se realiza con `prepareQueuedMoves()`, pero si la API devuelve errores útiles por inserción, sería recomendable registrarlos.
