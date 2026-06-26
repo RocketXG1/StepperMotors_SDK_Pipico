@@ -1,0 +1,8 @@
+Copiar esta estructura a la microSD formateada en FAT32:
+
+/config/axes.txt
+/config/protocol/serial_recipe_protocol.txt   (opcional para documentacion)
+/logs/                                        (reservado para futuro)
+
+El firmware intenta leer la receta desde:
+0:/config/axes.txt
