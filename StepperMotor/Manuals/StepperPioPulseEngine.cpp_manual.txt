@@ -1,0 +1,316 @@
+MANUAL DETALLADO: src/srcStepper/StepperPioPulseEngine.cpp
+==========================================================
+
+Finalidad: Este archivo funciona como interfaz de envío de pulsos STEP mediante PIO de Raspberry Pi Pico.
+
+Ubicación y relación dentro del proyecto:
+- Ruta original: src/srcStepper/StepperPioPulseEngine.cpp
+- Manual generado: Manuals/StepperPioPulseEngine.cpp_manual.txt
+- Dependencias declaradas por include: StepperPioPulseEngine.h, stepper.pio.h
+- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+
+Forma de uso o instanciación esperada:
+- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
+- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
+- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
+- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
+
+Descripción línea a línea:
+Línea 1: `#include "StepperPioPulseEngine.h"`
+  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
+Línea 2: `#include "stepper.pio.h"`
+  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
+Línea 3: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 4: `static bool stepperProgramLoadedPio0 = false;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 5: `static bool stepperProgramLoadedPio1 = false;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 6: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 7: `static uint stepperProgramOffsetPio0 = 0;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 8: `static uint stepperProgramOffsetPio1 = 0;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 9: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 10: `StepperPioPulseEngine::StepperPioPulseEngine(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 11: `    PIO selectedPioBlock,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 12: `    uint selectedStateMachine,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 13: `    uint firstStepGpio,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 14: `    uint32_t minStepIntervalUs`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 15: `) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 16: `    pioBlock = selectedPioBlock;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 17: `    stateMachine = selectedStateMachine;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 18: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 19: `    firstStepPin = firstStepGpio;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 20: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 21: `    minimumStepIntervalUs = minStepIntervalUs;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 22: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 23: `    if (minimumStepIntervalUs < 6) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 24: `        minimumStepIntervalUs = 6;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 25: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 26: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 27: `    programOffset = 0;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 28: `    initialized = false;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 29: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 30: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 31: `void StepperPioPulseEngine::loadProgramIfNeeded() {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 32: `    if (pioBlock == pio0) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 33: `        if (!stepperProgramLoadedPio0) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 34: `            stepperProgramOffsetPio0 =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 35: `                pio_add_program(pioBlock, &stepper_multi_program);`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 36: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 37: `            stepperProgramLoadedPio0 = true;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 38: `        }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 39: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 40: `        programOffset = stepperProgramOffsetPio0;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 41: `    } else {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 42: `        if (!stepperProgramLoadedPio1) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 43: `            stepperProgramOffsetPio1 =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 44: `                pio_add_program(pioBlock, &stepper_multi_program);`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 45: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 46: `            stepperProgramLoadedPio1 = true;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 47: `        }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 48: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 49: `        programOffset = stepperProgramOffsetPio1;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 50: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 51: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 52: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 53: `void StepperPioPulseEngine::init() {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 54: `    loadProgramIfNeeded();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 55: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 56: `    stepper_multi_program_init(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 57: `        pioBlock,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 58: `        stateMachine,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 59: `        programOffset,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 60: `        firstStepPin,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 61: `        1000000.0f`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 62: `    );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 63: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 64: `    initialized = true;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 65: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 66: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 67: `bool StepperPioPulseEngine::isInitialized() const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 68: `    return initialized;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 69: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 70: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 71: `uint StepperPioPulseEngine::getFirstStepPin() const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 72: `    return firstStepPin;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 73: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 74: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 75: `uint StepperPioPulseEngine::getStepGroupPinCount() const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 76: `    return STEP_GROUP_PIN_COUNT;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 77: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 78: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 79: `bool StepperPioPulseEngine::pinBelongsToStepGroup(uint gpioPin) const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 80: `    if (gpioPin < firstStepPin) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 81: `        return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 82: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 83: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 84: `    if (gpioPin >= (firstStepPin + STEP_GROUP_PIN_COUNT)) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 85: `        return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 86: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 87: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 88: `    return true;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 89: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 90: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 91: `uint StepperPioPulseEngine::getPinOffset(uint gpioPin) const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 92: `    if (!pinBelongsToStepGroup(gpioPin)) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 93: `        return 0;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 94: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 95: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 96: `    return gpioPin - firstStepPin;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 97: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 98: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 99: `uint32_t StepperPioPulseEngine::getMinimumStepIntervalUs() const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 100: `    return minimumStepIntervalUs;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 101: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 102: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 103: `float StepperPioPulseEngine::getMaxStepEventsPerSecond() const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 104: `    return 1000000.0f / (float)minimumStepIntervalUs;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 105: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 106: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 107: `void StepperPioPulseEngine::sendStepMaskBlocking(uint32_t stepMask) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 108: `    if (!initialized) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 109: `        return;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 110: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 111: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 112: `    stepMask = stepMask & 0xFFu;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 113: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 114: `    if (stepMask == 0) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 115: `        return;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 116: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 117: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 118: `    pio_sm_put_blocking(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 119: `        pioBlock,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 120: `        stateMachine,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 121: `        stepMask`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 122: `    );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 123: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 124: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 125: `bool StepperPioPulseEngine::trySendStepMask(uint32_t stepMask) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 126: `    if (!initialized) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 127: `        return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 128: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 129: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 130: `    stepMask = stepMask & 0xFFu;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 131: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 132: `    if (stepMask == 0) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 133: `        return true;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 134: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 135: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 136: `    if (pio_sm_is_tx_fifo_full(pioBlock, stateMachine)) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 137: `        return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 138: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 139: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 140: `    pio_sm_put(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 141: `        pioBlock,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 142: `        stateMachine,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 143: `        stepMask`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 144: `    );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 145: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 146: `    return true;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 147: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+
+Resumen funcional:
+- src/srcStepper/StepperPioPulseEngine.cpp participa en el SDK aportando interfaz de envío de pulsos STEP mediante PIO de Raspberry Pi Pico.
+- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.
