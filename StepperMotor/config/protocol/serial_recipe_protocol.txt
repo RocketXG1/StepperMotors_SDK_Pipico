@@ -1,0 +1,15 @@
+# Protocolo preparado para una futura aplicacion por USB/serial.
+# De momento el firmware solo lee /config/axes.txt desde microSD.
+
+Comandos propuestos:
+SHOW CONFIG
+SHOW AXES
+SHOW AXIS <NAME>
+VALIDATE CONFIG
+RELOAD CONFIG
+
+# Futuro soporte de escritura:
+SET AXIS <NAME> <FIELD> <VALUE>
+SAVE CONFIG
+BACKUP CONFIG
+RESTORE CONFIG
