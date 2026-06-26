@@ -1,0 +1,220 @@
+MANUAL DETALLADO: lib/objStepper/AdvanceStepperAxis.h
+=====================================================
+
+Finalidad: Este archivo funciona como modelo de un eje paso a paso; gestiona pines, conversión mm/pasos, límites y homing.
+
+Ubicación y relación dentro del proyecto:
+- Ruta original: lib/objStepper/AdvanceStepperAxis.h
+- Manual generado: Manuals/AdvanceStepperAxis.h_manual.txt
+- Dependencias declaradas por include: pico/stdlib.h, StepperAxisConfig.h
+- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+
+Forma de uso o instanciación esperada:
+- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
+- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
+- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
+- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
+
+Descripción línea a línea:
+Línea 1: `#ifndef ADVANCE_STEPPER_AXIS_H`
+  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
+Línea 2: `#define ADVANCE_STEPPER_AXIS_H`
+  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
+Línea 3: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 4: `#include "pico/stdlib.h"`
+  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
+Línea 5: `#include "StepperAxisConfig.h"`
+  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
+Línea 6: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 7: `class AdvanceStepperAxis {`
+  Explicación: Declara una clase que agrupa estado interno y métodos relacionados.
+Línea 8: `private:`
+  Explicación: Define el nivel de acceso de los miembros declarados a continuación.
+Línea 9: `    StepperAxisConfig config;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 10: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 11: `    float stepsPerMm;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 12: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 13: `    int32_t currentPositionSteps;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 14: `    int32_t targetPositionSteps;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 15: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 16: `    bool enabled;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 17: `    bool currentDirection;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 18: `    bool homed;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 19: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 20: `    bool simulatedHomeActive;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 21: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 22: `    void calculateStepsPerMm();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 23: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 24: `    void configureInputPin(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 25: `        uint pin,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 26: `        bool usePullup`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 27: `    );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 28: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 29: `    bool readInputActive(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 30: `        uint pin,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 31: `        bool activeLow`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 32: `    ) const;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 33: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 34: `public:`
+  Explicación: Define el nivel de acceso de los miembros declarados a continuación.
+Línea 35: `    AdvanceStepperAxis(const StepperAxisConfig& axisConfig);`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 36: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 37: `    void init();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 38: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 39: `    const char* getAxisName() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 40: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 41: `    void enable();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 42: `    void disable();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 43: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 44: `    void setDirection(bool positiveDirection);`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 45: `    void setDirectionByDelta(int32_t deltaSteps);`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 46: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 47: `    void setCurrentPositionSteps(int32_t positionSteps);`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 48: `    void setCurrentPositionMm(float positionMm);`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 49: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 50: `    int32_t getCurrentPositionSteps() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 51: `    float getCurrentPositionMm() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 52: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 53: `    int32_t mmToSteps(float mm) const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 54: `    float stepsToMm(int32_t steps) const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 55: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 56: `    float getStepsPerMm() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 57: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 58: `    float getMaxSpeedMmS() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 59: `    float getAccelerationMmS2() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 60: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 61: `    uint getStepPin() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 62: `    uint getDirPin() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 63: `    uint getEnablePin() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 64: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 65: `    bool isEnabled() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 66: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 67: `    void addPositionSteps(int32_t deltaSteps);`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 68: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 69: `    bool isHomeEnabled() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 70: `    bool isHomeSensorActive() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 71: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 72: `    bool isMinLimitEnabled() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 73: `    bool isMaxLimitEnabled() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 74: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 75: `    bool isMinLimitActive() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 76: `    bool isMaxLimitActive() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 77: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 78: `    bool getHomeDirectionPositive() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 79: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 80: `    float getHomingSeekSpeedMmS() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 81: `    float getHomingLatchSpeedMmS() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 82: `    float getHomingBackoffMm() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 83: `    float getMaxHomingTravelMm() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 84: `    float getHomePositionMm() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 85: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 86: `    bool isHomeSimulationEnabled() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 87: `    void setHomeSimulationEnabled(bool enabled);`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 88: `    void setSimulatedHomeActive(bool active);`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 89: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 90: `    bool isHomed() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 91: `    void setHomed(bool state);`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 92: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 93: `    bool areSoftLimitsEnabled() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 94: `    bool isTargetWithinSoftLimits(float targetMm) const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 95: `    float getSoftLimitMinMm() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 96: `    float getSoftLimitMaxMm() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 97: `};`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 98: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 99: `#endif`
+  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
+
+Resumen funcional:
+- lib/objStepper/AdvanceStepperAxis.h participa en el SDK aportando modelo de un eje paso a paso; gestiona pines, conversión mm/pasos, límites y homing.
+- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.

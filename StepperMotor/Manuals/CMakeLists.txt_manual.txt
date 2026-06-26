@@ -1,0 +1,110 @@
+MANUAL DETALLADO: prgProject/CMakeLists.txt
+===========================================
+
+Finalidad: Este archivo funciona como configuración de compilación CMake/Pico SDK.
+
+Ubicación y relación dentro del proyecto:
+- Ruta original: prgProject/CMakeLists.txt
+- Manual generado: Manuals/CMakeLists.txt_manual.txt
+- No declara includes C/C++ directos, o es un archivo de texto/configuración.
+- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+
+Forma de uso o instanciación esperada:
+- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
+- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
+- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
+- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
+
+Descripción línea a línea:
+Línea 1: `cmake_minimum_required(VERSION 3.13)`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 2: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 3: `include(pico_sdk_import.cmake)`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 4: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 5: `project(template_motion_project C CXX ASM)`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 6: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 7: `set(CMAKE_C_STANDARD 11)`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 8: `set(CMAKE_CXX_STANDARD 17)`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 9: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 10: `pico_sdk_init()`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 11: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 12: `add_executable(template_motion_project`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 13: `    main.cpp`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 14: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 15: `    ../FunctionBlocks/HomeSequenceFunctionBlock.cpp`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 16: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 17: `    ../src/srcStepper/AdvanceStepperAxis.cpp`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 18: `    ../src/srcStepper/StepperPioPulseEngine.cpp`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 19: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 20: `    ../src/srcMotion/TrapezoidProfile.cpp`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 21: `    ../src/srcMotion/MotionPlanner.cpp`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 22: `    ../src/srcMotion/AdvanceMotionController.cpp`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 23: `)`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 24: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 25: `target_include_directories(template_motion_project PRIVATE`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 26: `    ../FunctionBlocks`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 27: `    ../lib/objStepper`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 28: `    ../lib/objMotion`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 29: `)`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 30: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 31: `pico_generate_pio_header(template_motion_project`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 32: `    ${CMAKE_CURRENT_LIST_DIR}/../src/srcStepper/stepper.pio`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 33: `)`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 34: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 35: `target_link_libraries(template_motion_project`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 36: `    pico_stdlib`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 37: `    hardware_pio`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 38: `    hardware_clocks`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 39: `)`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 40: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 41: `pico_enable_stdio_usb(template_motion_project 1)`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 42: `pico_enable_stdio_uart(template_motion_project 0)`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 43: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 44: `pico_add_extra_outputs(template_motion_project)`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+
+Resumen funcional:
+- prgProject/CMakeLists.txt participa en el SDK aportando configuración de compilación CMake/Pico SDK.
+- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.

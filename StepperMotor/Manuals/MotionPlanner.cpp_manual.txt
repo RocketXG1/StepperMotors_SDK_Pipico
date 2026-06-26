@@ -1,0 +1,1430 @@
+MANUAL DETALLADO: src/srcMotion/MotionPlanner.cpp
+=================================================
+
+Finalidad: Este archivo funciona como planificador de movimientos lineales y suavizado geométrico entre segmentos.
+
+Ubicación y relación dentro del proyecto:
+- Ruta original: src/srcMotion/MotionPlanner.cpp
+- Manual generado: Manuals/MotionPlanner.cpp_manual.txt
+- Dependencias declaradas por include: MotionPlanner.h, math.h
+- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+
+Forma de uso o instanciación esperada:
+- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
+- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
+- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
+- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
+
+Descripción línea a línea:
+Línea 1: `#include "MotionPlanner.h"`
+  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
+Línea 2: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 3: `#include <math.h>`
+  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
+Línea 4: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 5: `MotionPlanner::MotionPlanner() {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 6: `    axisCount = 0;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 7: `    configured = false;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 8: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 9: `    config.blendEnabled = false;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 10: `    config.blendDistanceMm = 1.0f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 11: `    config.blendSegmentLengthMm = 0.5f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 12: `    config.maxBlendSegments = 8;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 13: `    config.maxTrimRatio = 0.35f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 14: `    config.minMovementMm = 0.01f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 15: `    config.blendSpeedScale = 0.70f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 16: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 17: `    rawCount = 0;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 18: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 19: `    plannedHead = 0;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 20: `    plannedTail = 0;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 21: `    plannedCount = 0;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 22: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 23: `    for (uint i = 0; i < MAX_AXES; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 24: `        startPositionMm[i] = 0.0f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 25: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 26: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 27: `    for (uint i = 0; i < RAW_QUEUE_SIZE; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 28: `        rawQueue[i].reset();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 29: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 30: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 31: `    for (uint i = 0; i < PLANNED_QUEUE_SIZE; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 32: `        plannedQueue[i].reset();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 33: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 34: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 35: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 36: `void MotionPlanner::configure(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 37: `    uint numberOfAxes,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 38: `    const MotionPlannerConfig& plannerConfig`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 39: `) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 40: `    if (numberOfAxes == 0) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 41: `        configured = false;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 42: `        return;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 43: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 44: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 45: `    if (numberOfAxes > MAX_AXES) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 46: `        configured = false;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 47: `        return;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 48: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 49: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 50: `    axisCount = numberOfAxes;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 51: `    config = plannerConfig;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 52: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 53: `    if (config.blendDistanceMm < 0.0f) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 54: `        config.blendDistanceMm = 0.0f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 55: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 56: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 57: `    if (config.blendSegmentLengthMm <= 0.0f) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 58: `        config.blendSegmentLengthMm = 0.5f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 59: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 60: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 61: `    if (config.maxBlendSegments < 2) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 62: `        config.maxBlendSegments = 2;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 63: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 64: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 65: `    if (config.maxBlendSegments > 32) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 66: `        config.maxBlendSegments = 32;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 67: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 68: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 69: `    if (config.maxTrimRatio <= 0.0f) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 70: `        config.maxTrimRatio = 0.35f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 71: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 72: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 73: `    if (config.maxTrimRatio > 0.45f) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 74: `        config.maxTrimRatio = 0.45f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 75: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 76: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 77: `    if (config.minMovementMm <= 0.0f) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 78: `        config.minMovementMm = 0.01f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 79: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 80: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 81: `    if (config.blendSpeedScale <= 0.0f) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 82: `        config.blendSpeedScale = 0.70f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 83: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 84: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 85: `    if (config.blendSpeedScale > 1.0f) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 86: `        config.blendSpeedScale = 1.0f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 87: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 88: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 89: `    configured = true;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 90: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 91: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 92: `void MotionPlanner::setStartPosition(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 93: `    const float currentPositionMm[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 94: `    uint numberOfAxes`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 95: `) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 96: `    if (currentPositionMm == nullptr) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 97: `        return;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 98: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 99: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 100: `    if (numberOfAxes != axisCount) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 101: `        return;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 102: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 103: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 104: `    for (uint i = 0; i < axisCount; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 105: `        startPositionMm[i] = currentPositionMm[i];`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 106: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 107: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 108: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 109: `void MotionPlanner::setBlendEnabled(bool enabled) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 110: `    config.blendEnabled = enabled;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 111: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 112: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 113: `void MotionPlanner::setBlendParameters(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 114: `    float blendDistanceMm,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 115: `    float blendSegmentLengthMm,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 116: `    uint maxBlendSegments,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 117: `    float blendSpeedScale`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 118: `) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 119: `    config.blendDistanceMm = blendDistanceMm;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 120: `    config.blendSegmentLengthMm = blendSegmentLengthMm;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 121: `    config.maxBlendSegments = maxBlendSegments;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 122: `    config.blendSpeedScale = blendSpeedScale;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 123: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 124: `    MotionPlannerConfig copy = config;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 125: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 126: `    configure(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 127: `        axisCount,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 128: `        copy`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 129: `    );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 130: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 131: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 132: `bool MotionPlanner::pushLinearTo(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 133: `    std::initializer_list<float> targetPositionsMm,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 134: `    float requestedSpeedMmS`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 135: `) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 136: `    if (!configured) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 137: `        return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 138: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 139: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 140: `    if (targetPositionsMm.size() != axisCount) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 141: `        return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 142: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 143: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 144: `    if (requestedSpeedMmS <= 0.0f) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 145: `        return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 146: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 147: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 148: `    if (rawCount >= RAW_QUEUE_SIZE) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 149: `        return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 150: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 151: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 152: `    RawLinearMove& move = rawQueue[rawCount];`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 153: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 154: `    move.reset();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 155: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 156: `    move.axisCount = axisCount;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 157: `    move.requestedSpeedMmS = requestedSpeedMmS;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 158: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 159: `    uint index = 0;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 160: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 161: `    for (float targetMm : targetPositionsMm) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 162: `        move.targetPositionMm[index] = targetMm;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 163: `        index++;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 164: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 165: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 166: `    move.valid = true;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 167: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 168: `    rawCount++;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 169: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 170: `    return true;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 171: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 172: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 173: `bool MotionPlanner::buildPlannedQueue() {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 174: `    if (!configured) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 175: `        return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 176: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 177: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 178: `    clearPlannedQueueOnly();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 179: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 180: `    if (rawCount == 0) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 181: `        return true;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 182: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 183: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 184: `    float points[RAW_QUEUE_SIZE + 1][MAX_AXES];`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 185: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 186: `    for (uint axis = 0; axis < axisCount; axis++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 187: `        points[0][axis] = startPositionMm[axis];`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 188: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 189: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 190: `    for (uint i = 0; i < rawCount; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 191: `        for (uint axis = 0; axis < axisCount; axis++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 192: `            points[i + 1][axis] =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 193: `                rawQueue[i].targetPositionMm[axis];`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 194: `        }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 195: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 196: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 197: `    bool cornerHasBlend[RAW_QUEUE_SIZE + 1];`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 198: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 199: `    float blendEntryPoint[RAW_QUEUE_SIZE + 1][MAX_AXES];`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 200: `    float blendExitPoint[RAW_QUEUE_SIZE + 1][MAX_AXES];`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 201: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 202: `    for (uint i = 0; i < RAW_QUEUE_SIZE + 1; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 203: `        cornerHasBlend[i] = false;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 204: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 205: `        for (uint axis = 0; axis < MAX_AXES; axis++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 206: `            blendEntryPoint[i][axis] = 0.0f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 207: `            blendExitPoint[i][axis] = 0.0f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 208: `        }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 209: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 210: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 211: `    /*`
+  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
+Línea 212: `        El suavizado geométrico requiere mínimo 2 ejes.`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 213: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 214: `        Si axisCount == 1:`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 215: `        - se permite mover el eje`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 216: `        - se permite cola de movimientos`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 217: `        - no se generan curvas`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 218: `    */`
+  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
+Línea 219: `    if (config.blendEnabled && rawCount >= 2 && axisCount >= 2) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 220: `        for (uint cornerIndex = 1; cornerIndex < rawCount; cornerIndex++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 221: `            float unitIn[MAX_AXES];`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 222: `            float unitOut[MAX_AXES];`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 223: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 224: `            float lengthIn = 0.0f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 225: `            float lengthOut = 0.0f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 226: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 227: `            bool validIn =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 228: `                normalizeVector(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 229: `                    points[cornerIndex - 1],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 230: `                    points[cornerIndex],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 231: `                    unitIn,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 232: `                    axisCount,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 233: `                    lengthIn`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 234: `                );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 235: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 236: `            bool validOut =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 237: `                normalizeVector(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 238: `                    points[cornerIndex],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 239: `                    points[cornerIndex + 1],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 240: `                    unitOut,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 241: `                    axisCount,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 242: `                    lengthOut`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 243: `                );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 244: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 245: `            if (!validIn || !validOut) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 246: `                continue;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 247: `            }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 248: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 249: `            float dot =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 250: `                dotProduct(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 251: `                    unitIn,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 252: `                    unitOut,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 253: `                    axisCount`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 254: `                );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 255: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 256: `            if (dot > 0.999f) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 257: `                continue;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 258: `            }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 259: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 260: `            if (dot < -0.95f) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 261: `                continue;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 262: `            }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 263: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 264: `            float angleFactor =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 265: `                (1.0f - dot) * 0.5f;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 266: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 267: `            float trimDistance =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 268: `                config.blendDistanceMm * angleFactor;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 269: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 270: `            float maxTrimIn =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 271: `                lengthIn * config.maxTrimRatio;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 272: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 273: `            float maxTrimOut =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 274: `                lengthOut * config.maxTrimRatio;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 275: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 276: `            if (trimDistance > maxTrimIn) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 277: `                trimDistance = maxTrimIn;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 278: `            }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 279: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 280: `            if (trimDistance > maxTrimOut) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 281: `                trimDistance = maxTrimOut;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 282: `            }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 283: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 284: `            if (trimDistance <= config.minMovementMm) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 285: `                continue;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 286: `            }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 287: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 288: `            calculatePointBeforeCorner(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 289: `                points[cornerIndex],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 290: `                unitIn,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 291: `                trimDistance,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 292: `                blendEntryPoint[cornerIndex],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 293: `                axisCount`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 294: `            );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 295: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 296: `            calculatePointAfterCorner(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 297: `                points[cornerIndex],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 298: `                unitOut,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 299: `                trimDistance,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 300: `                blendExitPoint[cornerIndex],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 301: `                axisCount`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 302: `            );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 303: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 304: `            cornerHasBlend[cornerIndex] = true;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 305: `        }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 306: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 307: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 308: `    for (uint rawIndex = 0; rawIndex < rawCount; rawIndex++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 309: `        uint cornerAtEnd =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 310: `            rawIndex + 1;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 311: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 312: `        float lineEnd[MAX_AXES];`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 313: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 314: `        if (cornerHasBlend[cornerAtEnd]) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 315: `            copyPoint(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 316: `                lineEnd,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 317: `                blendEntryPoint[cornerAtEnd],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 318: `                axisCount`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 319: `            );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 320: `        } else {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 321: `            copyPoint(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 322: `                lineEnd,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 323: `                points[cornerAtEnd],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 324: `                axisCount`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 325: `            );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 326: `        }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 327: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 328: `        if (!addPlannedMove(`
+  Explicación: Evalúa una condición para decidir si se ejecuta el bloque siguiente.
+Línea 329: `                lineEnd,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 330: `                axisCount,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 331: `                rawQueue[rawIndex].requestedSpeedMmS,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 332: `                false`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 333: `            )) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 334: `            return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 335: `        }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 336: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 337: `        if (cornerHasBlend[cornerAtEnd]) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 338: `            float entryPoint[MAX_AXES];`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 339: `            float cornerPoint[MAX_AXES];`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 340: `            float exitPoint[MAX_AXES];`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 341: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 342: `            copyPoint(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 343: `                entryPoint,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 344: `                blendEntryPoint[cornerAtEnd],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 345: `                axisCount`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 346: `            );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 347: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 348: `            copyPoint(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 349: `                cornerPoint,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 350: `                points[cornerAtEnd],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 351: `                axisCount`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 352: `            );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 353: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 354: `            copyPoint(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 355: `                exitPoint,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 356: `                blendExitPoint[cornerAtEnd],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 357: `                axisCount`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 358: `            );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 359: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 360: `            float curveDistance =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 361: `                distanceBetween(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 362: `                    entryPoint,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 363: `                    exitPoint,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 364: `                    axisCount`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 365: `                );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 366: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 367: `            uint blendSegments =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 368: `                (uint)ceilf(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 369: `                    curveDistance /`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 370: `                    config.blendSegmentLengthMm`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 371: `                );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 372: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 373: `            if (blendSegments < 2) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 374: `                blendSegments = 2;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 375: `            }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 376: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 377: `            if (blendSegments > config.maxBlendSegments) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 378: `                blendSegments = config.maxBlendSegments;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 379: `            }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 380: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 381: `            float currentSpeed =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 382: `                rawQueue[rawIndex].requestedSpeedMmS;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 383: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 384: `            float nextSpeed =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 385: `                rawQueue[rawIndex + 1].requestedSpeedMmS;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 386: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 387: `            float blendSpeed = currentSpeed;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 388: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 389: `            if (nextSpeed < blendSpeed) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 390: `                blendSpeed = nextSpeed;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 391: `            }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 392: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 393: `            blendSpeed =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 394: `                blendSpeed *`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 395: `                config.blendSpeedScale;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 396: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 397: `            for (uint segment = 1; segment <= blendSegments; segment++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 398: `                float t =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 399: `                    (float)segment /`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 400: `                    (float)blendSegments;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 401: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 402: `                float bezierPoint[MAX_AXES];`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 403: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 404: `                calculateBezierPoint(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 405: `                    entryPoint,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 406: `                    cornerPoint,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 407: `                    exitPoint,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 408: `                    t,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 409: `                    bezierPoint,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 410: `                    axisCount`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 411: `                );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 412: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 413: `                if (!addPlannedMove(`
+  Explicación: Evalúa una condición para decidir si se ejecuta el bloque siguiente.
+Línea 414: `                        bezierPoint,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 415: `                        axisCount,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 416: `                        blendSpeed,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 417: `                        true`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 418: `                    )) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 419: `                    return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 420: `                }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 421: `            }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 422: `        }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 423: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 424: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 425: `    assignPlannedSpeeds();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 426: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 427: `    return true;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 428: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 429: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 430: `bool MotionPlanner::addPlannedMove(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 431: `    const float targetPositionMm[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 432: `    uint targetAxisCount,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 433: `    float requestedSpeedMmS,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 434: `    bool isBlendSegment`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 435: `) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 436: `    if (targetPositionMm == nullptr) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 437: `        return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 438: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 439: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 440: `    if (targetAxisCount != axisCount) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 441: `        return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 442: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 443: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 444: `    if (requestedSpeedMmS <= 0.0f) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 445: `        return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 446: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 447: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 448: `    if (plannedCount >= PLANNED_QUEUE_SIZE) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 449: `        return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 450: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 451: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 452: `    PlannedLinearMove& move =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 453: `        plannedQueue[plannedHead];`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 454: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 455: `    move.reset();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 456: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 457: `    move.axisCount = axisCount;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 458: `    move.requestedSpeedMmS = requestedSpeedMmS;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 459: `    move.isBlendSegment = isBlendSegment;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 460: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 461: `    for (uint i = 0; i < axisCount; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 462: `        move.targetPositionMm[i] =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 463: `            targetPositionMm[i];`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 464: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 465: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 466: `    move.valid = true;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 467: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 468: `    plannedHead =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 469: `        (plannedHead + 1) %`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 470: `        PLANNED_QUEUE_SIZE;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 471: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 472: `    plannedCount++;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 473: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 474: `    return true;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 475: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 476: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 477: `void MotionPlanner::assignPlannedSpeeds() {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 478: `    if (plannedCount == 0) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 479: `        return;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 480: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 481: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 482: `    for (uint i = 0; i < plannedCount; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 483: `        plannedQueue[i].entrySpeedMmS = 0.0f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 484: `        plannedQueue[i].exitSpeedMmS = 0.0f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 485: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 486: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 487: `    for (uint i = 0; i < plannedCount; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 488: `        if (i == 0) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 489: `            plannedQueue[i].entrySpeedMmS = 0.0f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 490: `        } else {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 491: `            float junctionSpeed = 0.0f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 492: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 493: `            bool previousBlend =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 494: `                plannedQueue[i - 1].isBlendSegment;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 495: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 496: `            bool currentBlend =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 497: `                plannedQueue[i].isBlendSegment;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 498: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 499: `            if (previousBlend || currentBlend) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 500: `                junctionSpeed =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 501: `                    plannedQueue[i - 1].requestedSpeedMmS;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 502: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 503: `                if (plannedQueue[i].requestedSpeedMmS < junctionSpeed) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 504: `                    junctionSpeed =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 505: `                        plannedQueue[i].requestedSpeedMmS;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 506: `                }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 507: `            }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 508: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 509: `            plannedQueue[i].entrySpeedMmS =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 510: `                junctionSpeed;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 511: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 512: `            plannedQueue[i - 1].exitSpeedMmS =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 513: `                junctionSpeed;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 514: `        }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 515: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 516: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 517: `    plannedQueue[plannedCount - 1].exitSpeedMmS = 0.0f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 518: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 519: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 520: `bool MotionPlanner::popPlannedMove(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 521: `    PlannedLinearMove& outputMove`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 522: `) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 523: `    outputMove.reset();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 524: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 525: `    if (plannedCount == 0) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 526: `        return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 527: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 528: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 529: `    outputMove = plannedQueue[plannedTail];`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 530: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 531: `    plannedQueue[plannedTail].reset();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 532: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 533: `    plannedTail =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 534: `        (plannedTail + 1) %`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 535: `        PLANNED_QUEUE_SIZE;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 536: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 537: `    plannedCount--;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 538: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 539: `    return outputMove.valid;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 540: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 541: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 542: `bool MotionPlanner::hasPlannedMoves() const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 543: `    return plannedCount > 0;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 544: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 545: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 546: `bool MotionPlanner::hasRawMoves() const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 547: `    return rawCount > 0;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 548: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 549: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 550: `uint MotionPlanner::getRawMoveCount() const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 551: `    return rawCount;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 552: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 553: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 554: `uint MotionPlanner::getPlannedMoveCount() const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 555: `    return plannedCount;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 556: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 557: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 558: `void MotionPlanner::clear() {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 559: `    rawCount = 0;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 560: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 561: `    for (uint i = 0; i < RAW_QUEUE_SIZE; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 562: `        rawQueue[i].reset();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 563: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 564: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 565: `    clearPlannedQueueOnly();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 566: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 567: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 568: `void MotionPlanner::clearPlannedQueueOnly() {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 569: `    plannedHead = 0;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 570: `    plannedTail = 0;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 571: `    plannedCount = 0;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 572: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 573: `    for (uint i = 0; i < PLANNED_QUEUE_SIZE; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 574: `        plannedQueue[i].reset();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 575: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 576: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 577: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 578: `float MotionPlanner::distanceBetween(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 579: `    const float a[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 580: `    const float b[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 581: `    uint count`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 582: `) const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 583: `    float sum = 0.0f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 584: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 585: `    for (uint i = 0; i < count; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 586: `        float difference =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 587: `            b[i] - a[i];`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 588: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 589: `        sum += difference * difference;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 590: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 591: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 592: `    return sqrtf(sum);`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 593: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 594: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 595: `bool MotionPlanner::normalizeVector(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 596: `    const float start[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 597: `    const float end[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 598: `    float outputUnit[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 599: `    uint count,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 600: `    float& outputDistance`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 601: `) const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 602: `    outputDistance =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 603: `        distanceBetween(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 604: `            start,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 605: `            end,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 606: `            count`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 607: `        );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 608: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 609: `    if (outputDistance <= config.minMovementMm) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 610: `        for (uint i = 0; i < count; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 611: `            outputUnit[i] = 0.0f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 612: `        }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 613: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 614: `        return false;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 615: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 616: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 617: `    for (uint i = 0; i < count; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 618: `        outputUnit[i] =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 619: `            (end[i] - start[i]) /`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 620: `            outputDistance;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 621: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 622: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 623: `    return true;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 624: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 625: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 626: `float MotionPlanner::dotProduct(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 627: `    const float a[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 628: `    const float b[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 629: `    uint count`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 630: `) const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 631: `    float result = 0.0f;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 632: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 633: `    for (uint i = 0; i < count; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 634: `        result += a[i] * b[i];`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 635: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 636: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 637: `    return result;`
+  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
+Línea 638: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 639: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 640: `void MotionPlanner::copyPoint(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 641: `    float destination[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 642: `    const float source[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 643: `    uint count`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 644: `) const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 645: `    for (uint i = 0; i < count; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 646: `        destination[i] = source[i];`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 647: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 648: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 649: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 650: `void MotionPlanner::calculatePointBeforeCorner(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 651: `    const float corner[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 652: `    const float unitIn[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 653: `    float trimDistance,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 654: `    float outputPoint[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 655: `    uint count`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 656: `) const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 657: `    for (uint i = 0; i < count; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 658: `        outputPoint[i] =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 659: `            corner[i] -`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 660: `            unitIn[i] * trimDistance;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 661: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 662: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 663: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 664: `void MotionPlanner::calculatePointAfterCorner(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 665: `    const float corner[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 666: `    const float unitOut[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 667: `    float trimDistance,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 668: `    float outputPoint[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 669: `    uint count`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 670: `) const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 671: `    for (uint i = 0; i < count; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 672: `        outputPoint[i] =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 673: `            corner[i] +`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 674: `            unitOut[i] * trimDistance;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 675: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 676: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 677: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 678: `void MotionPlanner::calculateBezierPoint(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 679: `    const float start[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 680: `    const float control[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 681: `    const float end[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 682: `    float t,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 683: `    float outputPoint[],`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 684: `    uint count`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 685: `) const {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 686: `    float oneMinusT =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 687: `        1.0f - t;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 688: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 689: `    float firstWeight =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 690: `        oneMinusT * oneMinusT;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 691: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 692: `    float controlWeight =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 693: `        2.0f * oneMinusT * t;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 694: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 695: `    float endWeight =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 696: `        t * t;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 697: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 698: `    for (uint i = 0; i < count; i++) {`
+  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
+Línea 699: `        outputPoint[i] =`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 700: `            firstWeight * start[i] +`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 701: `            controlWeight * control[i] +`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 702: `            endWeight * end[i];`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 703: `    }`
+  Explicación: Cierra el bloque de código abierto previamente.
+Línea 704: `}`
+  Explicación: Cierra el bloque de código abierto previamente.
+
+Resumen funcional:
+- src/srcMotion/MotionPlanner.cpp participa en el SDK aportando planificador de movimientos lineales y suavizado geométrico entre segmentos.
+- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.

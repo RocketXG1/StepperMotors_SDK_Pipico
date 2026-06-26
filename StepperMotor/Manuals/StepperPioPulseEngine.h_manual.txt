@@ -1,0 +1,118 @@
+MANUAL DETALLADO: lib/objStepper/StepperPioPulseEngine.h
+========================================================
+
+Finalidad: Este archivo funciona como interfaz de envío de pulsos STEP mediante PIO de Raspberry Pi Pico.
+
+Ubicación y relación dentro del proyecto:
+- Ruta original: lib/objStepper/StepperPioPulseEngine.h
+- Manual generado: Manuals/StepperPioPulseEngine.h_manual.txt
+- Dependencias declaradas por include: pico/stdlib.h, hardware/pio.h
+- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+
+Forma de uso o instanciación esperada:
+- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
+- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
+- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
+- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
+
+Descripción línea a línea:
+Línea 1: `#ifndef STEPPER_PIO_PULSE_ENGINE_H`
+  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
+Línea 2: `#define STEPPER_PIO_PULSE_ENGINE_H`
+  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
+Línea 3: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 4: `#include "pico/stdlib.h"`
+  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
+Línea 5: `#include "hardware/pio.h"`
+  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
+Línea 6: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 7: `class StepperPioPulseEngine {`
+  Explicación: Declara una clase que agrupa estado interno y métodos relacionados.
+Línea 8: `private:`
+  Explicación: Define el nivel de acceso de los miembros declarados a continuación.
+Línea 9: `    static const uint STEP_GROUP_PIN_COUNT = 8;`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 10: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 11: `    PIO pioBlock;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 12: `    uint stateMachine;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 13: `    uint programOffset;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 14: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 15: `    uint firstStepPin;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 16: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 17: `    uint32_t minimumStepIntervalUs;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 18: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 19: `    bool initialized;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 20: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 21: `    void loadProgramIfNeeded();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 22: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 23: `public:`
+  Explicación: Define el nivel de acceso de los miembros declarados a continuación.
+Línea 24: `    StepperPioPulseEngine(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 25: `        PIO selectedPioBlock,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 26: `        uint selectedStateMachine,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 27: `        uint firstStepGpio,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 28: `        uint32_t minStepIntervalUs = 10`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 29: `    );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 30: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 31: `    void init();`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 32: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 33: `    bool isInitialized() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 34: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 35: `    uint getFirstStepPin() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 36: `    uint getStepGroupPinCount() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 37: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 38: `    bool pinBelongsToStepGroup(uint gpioPin) const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 39: `    uint getPinOffset(uint gpioPin) const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 40: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 41: `    uint32_t getMinimumStepIntervalUs() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 42: `    float getMaxStepEventsPerSecond() const;`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 43: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 44: `    void sendStepMaskBlocking(uint32_t stepMask);`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 45: `    bool trySendStepMask(uint32_t stepMask);`
+  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
+Línea 46: `};`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 47: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 48: `#endif`
+  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
+
+Resumen funcional:
+- lib/objStepper/StepperPioPulseEngine.h participa en el SDK aportando interfaz de envío de pulsos STEP mediante PIO de Raspberry Pi Pico.
+- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.

@@ -1,0 +1,82 @@
+MANUAL DETALLADO: FunctionBlocks/HomeSequenceFunctionBlock.h
+============================================================
+
+Finalidad: Este archivo funciona como bloque funcional para ejecutar una secuencia de homing de forma encapsulada.
+
+Ubicación y relación dentro del proyecto:
+- Ruta original: FunctionBlocks/HomeSequenceFunctionBlock.h
+- Manual generado: Manuals/HomeSequenceFunctionBlock.h_manual.txt
+- Dependencias declaradas por include: initializer_list, AdvanceMotionController.h
+- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+
+Forma de uso o instanciación esperada:
+- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
+- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
+- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
+- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
+
+Descripción línea a línea:
+Línea 1: `#ifndef HOME_SEQUENCE_FUNCTION_BLOCK_H`
+  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
+Línea 2: `#define HOME_SEQUENCE_FUNCTION_BLOCK_H`
+  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
+Línea 3: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 4: `#include <initializer_list>`
+  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
+Línea 5: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 6: `#include "AdvanceMotionController.h"`
+  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
+Línea 7: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 8: `enum HomeSequenceResult {`
+  Explicación: Declara un conjunto cerrado de valores simbólicos.
+Línea 9: `    HOME_SEQUENCE_OK = 0,`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 10: `    HOME_SEQUENCE_ERROR_INVALID_CONTROLLER = 1,`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 11: `    HOME_SEQUENCE_ERROR_INVALID_ORDER = 2,`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 12: `    HOME_SEQUENCE_ERROR_HOMING_FAILED = 3`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 13: `};`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 14: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 15: `enum HomeSequenceStep {`
+  Explicación: Declara un conjunto cerrado de valores simbólicos.
+Línea 16: `    HOME_STEP_VALIDATE_CONTROLLER = 0,`
+  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
+Línea 17: `    HOME_STEP_PRINT_AXIS_MAP,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 18: `    HOME_STEP_CONFIGURE_HOME_ORDER,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 19: `    HOME_STEP_PRINT_HOME_ORDER,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 20: `    HOME_STEP_INITIALIZE_HARDWARE,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 21: `    HOME_STEP_EXECUTE_HOME,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 22: `    HOME_STEP_DONE`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 23: `};`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 24: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 25: `int executeHomeSequence(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 26: `    AdvanceMotionController& motion,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 27: `    std::initializer_list<const char*> orderedAxisNames`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 28: `);`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 29: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 30: `#endif`
+  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
+
+Resumen funcional:
+- FunctionBlocks/HomeSequenceFunctionBlock.h participa en el SDK aportando bloque funcional para ejecutar una secuencia de homing de forma encapsulada.
+- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.

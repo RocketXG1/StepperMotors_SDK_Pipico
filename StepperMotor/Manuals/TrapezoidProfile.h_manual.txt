@@ -1,0 +1,98 @@
+MANUAL DETALLADO: lib/objMotion/TrapezoidProfile.h
+==================================================
+
+Finalidad: Este archivo funciona como cálculo del perfil de aceleración, crucero y desaceleración.
+
+Ubicación y relación dentro del proyecto:
+- Ruta original: lib/objMotion/TrapezoidProfile.h
+- Manual generado: Manuals/TrapezoidProfile.h_manual.txt
+- Dependencias declaradas por include: pico/stdlib.h
+- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+
+Forma de uso o instanciación esperada:
+- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
+- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
+- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
+- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
+
+Descripción línea a línea:
+Línea 1: `#ifndef TRAPEZOID_PROFILE_H`
+  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
+Línea 2: `#define TRAPEZOID_PROFILE_H`
+  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
+Línea 3: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 4: `#include "pico/stdlib.h"`
+  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
+Línea 5: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 6: `struct TrapezoidProfileData {`
+  Explicación: Declara una estructura de datos para transportar configuración, estado o resultados.
+Línea 7: `    uint32_t accelerationSteps;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 8: `    uint32_t cruiseSteps;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 9: `    uint32_t decelerationSteps;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 10: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 11: `    float entrySpeedMmS;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 12: `    float exitSpeedMmS;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 13: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 14: `    float requestedSpeedMmS;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 15: `    float reachableSpeedMmS;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 16: `    float accelerationMmS2;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 17: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 18: `    float accelerationDistanceMm;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 19: `    float cruiseDistanceMm;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 20: `    float decelerationDistanceMm;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 21: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 22: `    bool isTriangular;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 23: `    bool valid;`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 24: `};`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 25: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 26: `class TrapezoidProfile {`
+  Explicación: Declara una clase que agrupa estado interno y métodos relacionados.
+Línea 27: `public:`
+  Explicación: Define el nivel de acceso de los miembros declarados a continuación.
+Línea 28: `    static TrapezoidProfileData calculate(`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 29: `        uint32_t totalSteps,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 30: `        float distanceMm,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 31: `        float requestedSpeedMmS,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 32: `        float accelerationMmS2,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 33: `        float entrySpeedMmS,`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 34: `        float exitSpeedMmS`
+  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
+Línea 35: `    );`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 36: `};`
+  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
+Línea 37: ``
+  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
+Línea 38: `#endif`
+  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
+
+Resumen funcional:
+- lib/objMotion/TrapezoidProfile.h participa en el SDK aportando cálculo del perfil de aceleración, crucero y desaceleración.
+- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.
