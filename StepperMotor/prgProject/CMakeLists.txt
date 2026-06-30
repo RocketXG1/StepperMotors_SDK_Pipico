@@ -13,6 +13,9 @@ pico_sdk_init()
 
 add_executable(template_motion_project
     main.cpp
+    MotionSystemInitializer.cpp
+    RecipeLoader.cpp
+    RecipeHomeSequence.cpp
 
     ../FunctionBlocks/HomeSequenceFunctionBlock.cpp
 
