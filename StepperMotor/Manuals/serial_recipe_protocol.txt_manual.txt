@@ -1,0 +1,32 @@
+MANUAL ACTUALIZADO - config/protocol/serial_recipe_protocol.txt
+================================================================================
+Funcion inicial del archivo
+- Archivo de soporte/documentacion del proyecto.
+
+Metodos, variables, secciones o instancias detectadas
+- No se detectaron simbolos de codigo; es texto/configuracion de referencia.
+
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
+
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `# Protocolo preparado para una futura aplicacion por USB/serial.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 2 | `# De momento el firmware solo lee /config/axes.txt desde microSD.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 3 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 4 | `Comandos propuestos:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 5 | `SHOW CONFIG` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 6 | `SHOW AXES` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 7 | `SHOW AXIS <NAME>` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 8 | `VALIDATE CONFIG` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 9 | `RELOAD CONFIG` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 10 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 11 | `# Futuro soporte de escritura:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 12 | `SET AXIS <NAME> <FIELD> <VALUE>` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 13 | `SAVE CONFIG` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 14 | `BACKUP CONFIG` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 15 | `RESTORE CONFIG` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |

@@ -1,0 +1,79 @@
+MANUAL ACTUALIZADO - prgProject/MotionSystemInitializer.cpp
+================================================================================
+Funcion inicial del archivo
+- Archivo de soporte/documentacion del proyecto.
+
+Metodos, variables, secciones o instancias detectadas
+- L6: `const char* getMotionSystemStatusMessage(MotionSystemStatus status) {`
+- L22: `if (recipe.axisCount == 0 || recipe.axisCount > MACHINE_RECIPE_MAX_AXES) {`
+- L24: `"ERROR: Invalid axis count in recipe: %u (max=%u)\n",`
+- L31: `for (uint axisIndex = 0; axisIndex < recipe.axisCount; axisIndex++) {`
+- L32: `system.axes[axisIndex] = new (system.axisStorage[axisIndex])`
+- L33: `AdvanceStepperAxis(recipe.axes[axisIndex].config);`
+- L35: `"Axis %u loaded: %s STEP=%u DIR=%u EN=%u\n",`
+- L37: `system.axes[axisIndex]->getAxisName(),`
+- L38: `system.axes[axisIndex]->getStepPin(),`
+- L39: `system.axes[axisIndex]->getDirPin(),`
+- L40: `system.axes[axisIndex]->getEnablePin()`
+- L44: `system.motion = new (system.motionStorage) AdvanceMotionController(`
+
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
+
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#include "MotionSystemInitializer.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 2 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 3 | `#include <new>` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 4 | `#include <stdio.h>` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 5 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 6 | `const char* getMotionSystemStatusMessage(MotionSystemStatus status) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 7 | `    switch (status) {` | Parte de una maquina de estados o seleccion multiple. |
+| 8 | `        case MotionSystemStatus::Ok:` | Parte de una maquina de estados o seleccion multiple. |
+| 9 | `            return "motion system initialized";` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 10 | `        case MotionSystemStatus::InvalidAxisCount:` | Parte de una maquina de estados o seleccion multiple. |
+| 11 | `            return "invalid recipe axis count";` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 12 | `        default:` | Parte de una maquina de estados o seleccion multiple. |
+| 13 | `            return "unknown motion system status";` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 14 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 15 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 16 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 17 | `MotionSystemStatus initializeMotionSystem(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 18 | `    const MachineRecipe& recipe,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 19 | `    StepperPioPulseEngine& pulseEngine,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 20 | `    MotionSystem& system` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 21 | `) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 22 | `    if (recipe.axisCount == 0 \|\| recipe.axisCount > MACHINE_RECIPE_MAX_AXES) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 23 | `        printf(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 24 | `            "ERROR: Invalid axis count in recipe: %u (max=%u)\n",` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 25 | `            recipe.axisCount,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 26 | `            MACHINE_RECIPE_MAX_AXES` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 27 | `        );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 28 | `        return MotionSystemStatus::InvalidAxisCount;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 29 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 30 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 31 | `    for (uint axisIndex = 0; axisIndex < recipe.axisCount; axisIndex++) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 32 | `        system.axes[axisIndex] = new (system.axisStorage[axisIndex])` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 33 | `            AdvanceStepperAxis(recipe.axes[axisIndex].config);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 34 | `        printf(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 35 | `            "Axis %u loaded: %s STEP=%u DIR=%u EN=%u\n",` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 36 | `            axisIndex,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 37 | `            system.axes[axisIndex]->getAxisName(),` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 38 | `            system.axes[axisIndex]->getStepPin(),` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 39 | `            system.axes[axisIndex]->getDirPin(),` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 40 | `            system.axes[axisIndex]->getEnablePin()` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 41 | `        );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 42 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 43 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 44 | `    system.motion = new (system.motionStorage) AdvanceMotionController(` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 45 | `        system.axes,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 46 | `        recipe.axisCount,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 47 | `        pulseEngine` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 48 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 49 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 50 | `    return MotionSystemStatus::Ok;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 51 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |

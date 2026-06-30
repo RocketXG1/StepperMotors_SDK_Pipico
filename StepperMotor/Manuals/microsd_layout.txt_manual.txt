@@ -1,0 +1,26 @@
+MANUAL ACTUALIZADO - config/examples/microsd_layout.txt
+================================================================================
+Funcion inicial del archivo
+- Archivo de soporte/documentacion del proyecto.
+
+Metodos, variables, secciones o instancias detectadas
+- L4: `/config/protocol/serial_recipe_protocol.txt   (opcional para documentacion)`
+- L5: `/logs/                                        (reservado para futuro)`
+
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
+
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `Copiar esta estructura a la microSD formateada en FAT32:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 2 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 3 | `/config/axes.txt` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 4 | `/config/protocol/serial_recipe_protocol.txt   (opcional para documentacion)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 5 | `/logs/                                        (reservado para futuro)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 6 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 7 | `El firmware intenta leer la receta desde:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 8 | `0:/config/axes.txt` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |

@@ -1,136 +1,90 @@
-MANUAL DETALLADO: lib/objMotion/MotionBlock.h
-=============================================
+MANUAL ACTUALIZADO - lib/objMotion/MotionBlock.h
+================================================================================
+Funcion inicial del archivo
+- Define el bloque de movimiento ya planificado que ejecuta el controlador.
 
-Finalidad: Este archivo funciona como bloque de movimiento ejecutable con deltas, direcciones y parámetros cinemáticos.
+Metodos, variables, secciones o instancias detectadas
+- L6: `struct MotionBlock {`
+- L7: `static const uint MAX_AXES = 8;`
+- L31: `void reset() {`
+- L32: `axisCount = 0;`
+- L34: `dominantSteps = 0;`
+- L36: `distanceMm = 0.0f;`
+- L38: `requestedSpeedMmS = 0.0f;`
+- L39: `nominalSpeedMmS = 0.0f;`
+- L41: `entrySpeedMmS = 0.0f;`
+- L42: `exitSpeedMmS = 0.0f;`
+- L44: `accelerationMmS2 = 0.0f;`
+- L46: `valid = false;`
+- L48: `for (uint i = 0; i < MAX_AXES; i++) {`
+- L49: `deltaSteps[i] = 0;`
+- L50: `absSteps[i] = 0;`
+- L51: `direction[i] = true;`
+- L52: `deltaMm[i] = 0.0f;`
 
-Ubicación y relación dentro del proyecto:
-- Ruta original: lib/objMotion/MotionBlock.h
-- Manual generado: Manuals/MotionBlock.h_manual.txt
-- Dependencias declaradas por include: pico/stdlib.h
-- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
 
-Forma de uso o instanciación esperada:
-- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
-- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
-- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
-- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
-
-Descripción línea a línea:
-Línea 1: `#ifndef MOTION_BLOCK_H`
-  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
-Línea 2: `#define MOTION_BLOCK_H`
-  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
-Línea 3: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 4: `#include "pico/stdlib.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 5: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 6: `struct MotionBlock {`
-  Explicación: Declara una estructura de datos para transportar configuración, estado o resultados.
-Línea 7: `    static const uint MAX_AXES = 8;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 8: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 9: `    uint axisCount;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 10: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 11: `    int32_t deltaSteps[MAX_AXES];`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 12: `    uint32_t absSteps[MAX_AXES];`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 13: `    bool direction[MAX_AXES];`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 14: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 15: `    uint32_t dominantSteps;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 16: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 17: `    float deltaMm[MAX_AXES];`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 18: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 19: `    float distanceMm;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 20: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 21: `    float requestedSpeedMmS;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 22: `    float nominalSpeedMmS;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 23: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 24: `    float entrySpeedMmS;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 25: `    float exitSpeedMmS;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 26: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 27: `    float accelerationMmS2;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 28: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 29: `    bool valid;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 30: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 31: `    void reset() {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 32: `        axisCount = 0;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 33: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 34: `        dominantSteps = 0;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 35: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 36: `        distanceMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 37: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 38: `        requestedSpeedMmS = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 39: `        nominalSpeedMmS = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 40: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 41: `        entrySpeedMmS = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 42: `        exitSpeedMmS = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 43: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 44: `        accelerationMmS2 = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 45: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 46: `        valid = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 47: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 48: `        for (uint i = 0; i < MAX_AXES; i++) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 49: `            deltaSteps[i] = 0;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 50: `            absSteps[i] = 0;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 51: `            direction[i] = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 52: `            deltaMm[i] = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 53: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 54: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 55: `};`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 56: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 57: `#endif`
-  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
-
-Resumen funcional:
-- lib/objMotion/MotionBlock.h participa en el SDK aportando bloque de movimiento ejecutable con deltas, direcciones y parámetros cinemáticos.
-- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#ifndef MOTION_BLOCK_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 2 | `#define MOTION_BLOCK_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 3 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 4 | `#include "pico/stdlib.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 5 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 6 | `struct MotionBlock {` | Declara una estructura de datos para agrupar variables relacionadas. |
+| 7 | `    static const uint MAX_AXES = 8;` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 8 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 9 | `    uint axisCount;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 10 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 11 | `    int32_t deltaSteps[MAX_AXES];` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 12 | `    uint32_t absSteps[MAX_AXES];` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 13 | `    bool direction[MAX_AXES];` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 14 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 15 | `    uint32_t dominantSteps;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 16 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 17 | `    float deltaMm[MAX_AXES];` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 18 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 19 | `    float distanceMm;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 20 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 21 | `    float requestedSpeedMmS;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 22 | `    float nominalSpeedMmS;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 23 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 24 | `    float entrySpeedMmS;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 25 | `    float exitSpeedMmS;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 26 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 27 | `    float accelerationMmS2;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 28 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 29 | `    bool valid;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 30 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 31 | `    void reset() {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 32 | `        axisCount = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 33 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 34 | `        dominantSteps = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 35 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 36 | `        distanceMm = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 37 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 38 | `        requestedSpeedMmS = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 39 | `        nominalSpeedMmS = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 40 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 41 | `        entrySpeedMmS = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 42 | `        exitSpeedMmS = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 43 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 44 | `        accelerationMmS2 = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 45 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 46 | `        valid = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 47 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 48 | `        for (uint i = 0; i < MAX_AXES; i++) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 49 | `            deltaSteps[i] = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 50 | `            absSteps[i] = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 51 | `            direction[i] = true;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 52 | `            deltaMm[i] = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 53 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 54 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 55 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 56 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 57 | `#endif` | Directiva de preprocesador que protege o cierra la inclusion del header. |

@@ -1,248 +1,159 @@
-MANUAL DETALLADO: FunctionBlocks/HomeSequenceFunctionBlock.cpp
-==============================================================
+MANUAL ACTUALIZADO - FunctionBlocks/HomeSequenceFunctionBlock.cpp
+================================================================================
+Funcion inicial del archivo
+- Encapsula la secuencia de HOME como bloque reusable.
 
-Finalidad: Este archivo funciona como bloque funcional para ejecutar una secuencia de homing de forma encapsulada.
+Metodos, variables, secciones o instancias detectadas
+- L11: `HomeSequenceStep currentStep =`
+- L14: `int homeResult =`
+- L18: `currentStep != HOME_STEP_DONE &&`
+- L19: `homeResult == HOME_SEQUENCE_OK`
+- L24: `printf("ERROR: Motion controller invalid.\n");`
+- L25: `printf("Check axis names, duplicate names or STEP pins.\n");`
+- L26: `homeResult =`
+- L31: `currentStep =`
+- L36: `motion.printAxisMap();`
+- L38: `currentStep =`
+- L44: `printf("ERROR: Invalid home order.\n");`
+- L45: `motion.emergencyStop();`
+- L46: `homeResult =`
+- L51: `currentStep =`
+- L56: `motion.printHomeOrder();`
+- L58: `currentStep =`
+- L63: `motion.init();`
+- L65: `currentStep =`
+- L70: `printf("Starting HOME...\n");`
+- L72: `bool homingOk =`
+- L73: `motion.homeAll();`
+- L76: `printf("ERROR: HOME failed.\n");`
+- L77: `motion.emergencyStop();`
+- L78: `homeResult =`
+- L83: `printf("HOME completed.\n");`
+- L85: `currentStep =`
+- L94: `motion.emergencyStop();`
+- L95: `homeResult =`
+- L101: `if (homeResult != HOME_SEQUENCE_OK) {`
+- L108: `tight_loop_contents();`
 
-Ubicación y relación dentro del proyecto:
-- Ruta original: FunctionBlocks/HomeSequenceFunctionBlock.cpp
-- Manual generado: Manuals/HomeSequenceFunctionBlock.cpp_manual.txt
-- Dependencias declaradas por include: HomeSequenceFunctionBlock.h, pico/stdlib.h, stdio.h
-- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
 
-Forma de uso o instanciación esperada:
-- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
-- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
-- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
-- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
-
-Descripción línea a línea:
-Línea 1: `#include "HomeSequenceFunctionBlock.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 2: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 3: `#include "pico/stdlib.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 4: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 5: `#include <stdio.h>`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 6: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 7: `int executeHomeSequence(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 8: `    AdvanceMotionController& motion,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 9: `    std::initializer_list<const char*> orderedAxisNames`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 10: `) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 11: `    HomeSequenceStep currentStep =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 12: `        HOME_STEP_VALIDATE_CONTROLLER;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 13: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 14: `    int homeResult =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 15: `        HOME_SEQUENCE_OK;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 16: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 17: `    while (`
-  Explicación: Inicia un ciclo que continúa mientras la condición permanezca verdadera.
-Línea 18: `        currentStep != HOME_STEP_DONE &&`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 19: `        homeResult == HOME_SEQUENCE_OK`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 20: `    ) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 21: `        switch (currentStep) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 22: `            case HOME_STEP_VALIDATE_CONTROLLER:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 23: `                if (!motion.isValid()) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 24: `                    printf("ERROR: Motion controller invalid.\n");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 25: `                    printf("Check axis names, duplicate names or STEP pins.\n");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 26: `                    homeResult =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 27: `                        HOME_SEQUENCE_ERROR_INVALID_CONTROLLER;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 28: `                    break;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 29: `                }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 30: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 31: `                currentStep =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 32: `                    HOME_STEP_PRINT_AXIS_MAP;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 33: `                break;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 34: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 35: `            case HOME_STEP_PRINT_AXIS_MAP:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 36: `                motion.printAxisMap();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 37: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 38: `                currentStep =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 39: `                    HOME_STEP_CONFIGURE_HOME_ORDER;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 40: `                break;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 41: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 42: `            case HOME_STEP_CONFIGURE_HOME_ORDER:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 43: `                if (!motion.setHomeOrderByName(orderedAxisNames)) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 44: `                    printf("ERROR: Invalid home order.\n");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 45: `                    motion.emergencyStop();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 46: `                    homeResult =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 47: `                        HOME_SEQUENCE_ERROR_INVALID_ORDER;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 48: `                    break;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 49: `                }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 50: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 51: `                currentStep =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 52: `                    HOME_STEP_PRINT_HOME_ORDER;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 53: `                break;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 54: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 55: `            case HOME_STEP_PRINT_HOME_ORDER:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 56: `                motion.printHomeOrder();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 57: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 58: `                currentStep =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 59: `                    HOME_STEP_INITIALIZE_HARDWARE;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 60: `                break;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 61: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 62: `            case HOME_STEP_INITIALIZE_HARDWARE:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 63: `                motion.init();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 64: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 65: `                currentStep =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 66: `                    HOME_STEP_EXECUTE_HOME;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 67: `                break;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 68: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 69: `            case HOME_STEP_EXECUTE_HOME: {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 70: `                printf("Starting HOME...\n");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 71: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 72: `                bool homingOk =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 73: `                    motion.homeAll();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 74: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 75: `                if (!homingOk) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 76: `                    printf("ERROR: HOME failed.\n");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 77: `                    motion.emergencyStop();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 78: `                    homeResult =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 79: `                        HOME_SEQUENCE_ERROR_HOMING_FAILED;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 80: `                    break;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 81: `                }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 82: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 83: `                printf("HOME completed.\n");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 84: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 85: `                currentStep =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 86: `                    HOME_STEP_DONE;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 87: `                break;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 88: `            }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 89: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 90: `            case HOME_STEP_DONE:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 91: `                break;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 92: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 93: `            default:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 94: `                motion.emergencyStop();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 95: `                homeResult =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 96: `                    HOME_SEQUENCE_ERROR_HOMING_FAILED;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 97: `                break;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 98: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 99: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 100: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 101: `    if (homeResult != HOME_SEQUENCE_OK) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 102: `        printf(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 103: `            "ERROR: HOME sequence failed with code %d.\n",`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 104: `            homeResult`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 105: `        );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 106: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 107: `        while (true) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 108: `            tight_loop_contents();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 109: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 110: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 111: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 112: `    return homeResult;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 113: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-
-Resumen funcional:
-- FunctionBlocks/HomeSequenceFunctionBlock.cpp participa en el SDK aportando bloque funcional para ejecutar una secuencia de homing de forma encapsulada.
-- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#include "HomeSequenceFunctionBlock.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 2 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 3 | `#include "pico/stdlib.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 4 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 5 | `#include <stdio.h>` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 6 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 7 | `int executeHomeSequence(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 8 | `    AdvanceMotionController& motion,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 9 | `    std::initializer_list<const char*> orderedAxisNames` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 10 | `) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 11 | `    HomeSequenceStep currentStep =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 12 | `        HOME_STEP_VALIDATE_CONTROLLER;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 13 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 14 | `    int homeResult =` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 15 | `        HOME_SEQUENCE_OK;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 16 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 17 | `    while (` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 18 | `        currentStep != HOME_STEP_DONE &&` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 19 | `        homeResult == HOME_SEQUENCE_OK` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 20 | `    ) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 21 | `        switch (currentStep) {` | Parte de una maquina de estados o seleccion multiple. |
+| 22 | `            case HOME_STEP_VALIDATE_CONTROLLER:` | Parte de una maquina de estados o seleccion multiple. |
+| 23 | `                if (!motion.isValid()) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 24 | `                    printf("ERROR: Motion controller invalid.\n");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 25 | `                    printf("Check axis names, duplicate names or STEP pins.\n");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 26 | `                    homeResult =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 27 | `                        HOME_SEQUENCE_ERROR_INVALID_CONTROLLER;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 28 | `                    break;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 29 | `                }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 30 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 31 | `                currentStep =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 32 | `                    HOME_STEP_PRINT_AXIS_MAP;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 33 | `                break;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 34 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 35 | `            case HOME_STEP_PRINT_AXIS_MAP:` | Parte de una maquina de estados o seleccion multiple. |
+| 36 | `                motion.printAxisMap();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 37 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 38 | `                currentStep =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 39 | `                    HOME_STEP_CONFIGURE_HOME_ORDER;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 40 | `                break;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 41 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 42 | `            case HOME_STEP_CONFIGURE_HOME_ORDER:` | Parte de una maquina de estados o seleccion multiple. |
+| 43 | `                if (!motion.setHomeOrderByName(orderedAxisNames)) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 44 | `                    printf("ERROR: Invalid home order.\n");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 45 | `                    motion.emergencyStop();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 46 | `                    homeResult =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 47 | `                        HOME_SEQUENCE_ERROR_INVALID_ORDER;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 48 | `                    break;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 49 | `                }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 50 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 51 | `                currentStep =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 52 | `                    HOME_STEP_PRINT_HOME_ORDER;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 53 | `                break;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 54 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 55 | `            case HOME_STEP_PRINT_HOME_ORDER:` | Parte de una maquina de estados o seleccion multiple. |
+| 56 | `                motion.printHomeOrder();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 57 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 58 | `                currentStep =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 59 | `                    HOME_STEP_INITIALIZE_HARDWARE;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 60 | `                break;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 61 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 62 | `            case HOME_STEP_INITIALIZE_HARDWARE:` | Parte de una maquina de estados o seleccion multiple. |
+| 63 | `                motion.init();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 64 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 65 | `                currentStep =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 66 | `                    HOME_STEP_EXECUTE_HOME;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 67 | `                break;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 68 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 69 | `            case HOME_STEP_EXECUTE_HOME: {` | Parte de una maquina de estados o seleccion multiple. |
+| 70 | `                printf("Starting HOME...\n");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 71 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 72 | `                bool homingOk =` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 73 | `                    motion.homeAll();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 74 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 75 | `                if (!homingOk) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 76 | `                    printf("ERROR: HOME failed.\n");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 77 | `                    motion.emergencyStop();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 78 | `                    homeResult =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 79 | `                        HOME_SEQUENCE_ERROR_HOMING_FAILED;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 80 | `                    break;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 81 | `                }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 82 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 83 | `                printf("HOME completed.\n");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 84 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 85 | `                currentStep =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 86 | `                    HOME_STEP_DONE;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 87 | `                break;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 88 | `            }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 89 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 90 | `            case HOME_STEP_DONE:` | Parte de una maquina de estados o seleccion multiple. |
+| 91 | `                break;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 92 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 93 | `            default:` | Parte de una maquina de estados o seleccion multiple. |
+| 94 | `                motion.emergencyStop();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 95 | `                homeResult =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 96 | `                    HOME_SEQUENCE_ERROR_HOMING_FAILED;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 97 | `                break;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 98 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 99 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 100 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 101 | `    if (homeResult != HOME_SEQUENCE_OK) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 102 | `        printf(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 103 | `            "ERROR: HOME sequence failed with code %d.\n",` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 104 | `            homeResult` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 105 | `        );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 106 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 107 | `        while (true) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 108 | `            tight_loop_contents();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 109 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 110 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 111 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 112 | `    return homeResult;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 113 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |

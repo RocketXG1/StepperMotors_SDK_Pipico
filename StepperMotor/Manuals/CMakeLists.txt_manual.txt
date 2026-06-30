@@ -1,110 +1,86 @@
-MANUAL DETALLADO: prgProject/CMakeLists.txt
-===========================================
+MANUAL ACTUALIZADO - prgProject/CMakeLists.txt
+================================================================================
+Funcion inicial del archivo
+- Define la compilacion del proyecto con Pico SDK.
 
-Finalidad: Este archivo funciona como configuración de compilación CMake/Pico SDK.
+Metodos, variables, secciones o instancias detectadas
+- L1: `cmake_minimum_required(VERSION 3.13)`
+- L3: `include(pico_sdk_import.cmake)`
+- L5: `project(template_motion_project C CXX ASM)`
+- L7: `set(CMAKE_C_STANDARD 11)`
+- L8: `set(CMAKE_CXX_STANDARD 17)`
+- L10: `option(STEPPER_ENABLE_MICROSD_FATFS "Enable FatFs-backed microSD recipe loading" OFF)`
+- L12: `pico_sdk_init()`
+- L46: `STEPPER_ENABLE_MICROSD_FATFS=$<BOOL:${STEPPER_ENABLE_MICROSD_FATFS}>`
+- L56: `pico_enable_stdio_usb(template_motion_project 1)`
+- L57: `pico_enable_stdio_uart(template_motion_project 0)`
+- L59: `pico_add_extra_outputs(template_motion_project)`
 
-Ubicación y relación dentro del proyecto:
-- Ruta original: prgProject/CMakeLists.txt
-- Manual generado: Manuals/CMakeLists.txt_manual.txt
-- No declara includes C/C++ directos, o es un archivo de texto/configuración.
-- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
 
-Forma de uso o instanciación esperada:
-- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
-- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
-- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
-- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
-
-Descripción línea a línea:
-Línea 1: `cmake_minimum_required(VERSION 3.13)`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 2: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 3: `include(pico_sdk_import.cmake)`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 4: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 5: `project(template_motion_project C CXX ASM)`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 6: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 7: `set(CMAKE_C_STANDARD 11)`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 8: `set(CMAKE_CXX_STANDARD 17)`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 9: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 10: `pico_sdk_init()`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 11: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 12: `add_executable(template_motion_project`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 13: `    main.cpp`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 14: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 15: `    ../FunctionBlocks/HomeSequenceFunctionBlock.cpp`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 16: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 17: `    ../src/srcStepper/AdvanceStepperAxis.cpp`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 18: `    ../src/srcStepper/StepperPioPulseEngine.cpp`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 19: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 20: `    ../src/srcMotion/TrapezoidProfile.cpp`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 21: `    ../src/srcMotion/MotionPlanner.cpp`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 22: `    ../src/srcMotion/AdvanceMotionController.cpp`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 23: `)`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 24: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 25: `target_include_directories(template_motion_project PRIVATE`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 26: `    ../FunctionBlocks`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 27: `    ../lib/objStepper`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 28: `    ../lib/objMotion`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 29: `)`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 30: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 31: `pico_generate_pio_header(template_motion_project`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 32: `    ${CMAKE_CURRENT_LIST_DIR}/../src/srcStepper/stepper.pio`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 33: `)`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 34: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 35: `target_link_libraries(template_motion_project`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 36: `    pico_stdlib`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 37: `    hardware_pio`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 38: `    hardware_clocks`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 39: `)`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 40: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 41: `pico_enable_stdio_usb(template_motion_project 1)`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 42: `pico_enable_stdio_uart(template_motion_project 0)`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 43: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 44: `pico_add_extra_outputs(template_motion_project)`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-
-Resumen funcional:
-- prgProject/CMakeLists.txt participa en el SDK aportando configuración de compilación CMake/Pico SDK.
-- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `cmake_minimum_required(VERSION 3.13)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 2 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 3 | `include(pico_sdk_import.cmake)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 4 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 5 | `project(template_motion_project C CXX ASM)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 6 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 7 | `set(CMAKE_C_STANDARD 11)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 8 | `set(CMAKE_CXX_STANDARD 17)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 9 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 10 | `option(STEPPER_ENABLE_MICROSD_FATFS "Enable FatFs-backed microSD recipe loading" OFF)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 11 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 12 | `pico_sdk_init()` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 13 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 14 | `add_executable(template_motion_project` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 15 | `    main.cpp` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 16 | `    MotionSystemInitializer.cpp` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 17 | `    RecipeLoader.cpp` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 18 | `    RecipeHomeSequence.cpp` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 19 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 20 | `    ../FunctionBlocks/HomeSequenceFunctionBlock.cpp` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 21 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 22 | `    ../src/srcConfig/MachineRecipe.cpp` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 23 | `    ../src/srcConfig/SdRecipeStorage.cpp` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 24 | `    ../src/srcConfig/DefaultRecipe.cpp` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 25 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 26 | `    ../src/srcStepper/AdvanceStepperAxis.cpp` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 27 | `    ../src/srcStepper/StepperPioPulseEngine.cpp` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 28 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 29 | `    ../src/srcMotion/TrapezoidProfile.cpp` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 30 | `    ../src/srcMotion/MotionPlanner.cpp` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 31 | `    ../src/srcMotion/AdvanceMotionController.cpp` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 32 | `)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 33 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 34 | `target_include_directories(template_motion_project PRIVATE` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 35 | `    ../FunctionBlocks` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 36 | `    ../lib/objStepper` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 37 | `    ../lib/objMotion` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 38 | `    ../lib/objConfig` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 39 | `)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 40 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 41 | `pico_generate_pio_header(template_motion_project` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 42 | `    ${CMAKE_CURRENT_LIST_DIR}/../src/srcStepper/stepper.pio` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 43 | `)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 44 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 45 | `target_compile_definitions(template_motion_project PRIVATE` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 46 | `    STEPPER_ENABLE_MICROSD_FATFS=$<BOOL:${STEPPER_ENABLE_MICROSD_FATFS}>` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 47 | `)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 48 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 49 | `target_link_libraries(template_motion_project` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 50 | `    pico_stdlib` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 51 | `    hardware_pio` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 52 | `    hardware_clocks` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 53 | `    hardware_spi` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 54 | `)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 55 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 56 | `pico_enable_stdio_usb(template_motion_project 1)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 57 | `pico_enable_stdio_uart(template_motion_project 0)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 58 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 59 | `pico_add_extra_outputs(template_motion_project)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |

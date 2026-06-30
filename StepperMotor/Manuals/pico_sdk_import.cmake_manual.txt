@@ -1,142 +1,108 @@
-MANUAL DETALLADO: prgProject/pico_sdk_import.cmake
-==================================================
+MANUAL ACTUALIZADO - prgProject/pico_sdk_import.cmake
+================================================================================
+Funcion inicial del archivo
+- Archivo de soporte/documentacion del proyecto.
 
-Finalidad: Este archivo funciona como configuración de compilación CMake/Pico SDK.
+Metodos, variables, secciones o instancias detectadas
+- L5: `set(PICO_SDK_PATH $ENV{PICO_SDK_PATH})`
+- L6: `message("Using PICO_SDK_PATH from environment ('${PICO_SDK_PATH}')")`
+- L7: `endif ()`
+- L10: `set(PICO_SDK_FETCH_FROM_GIT $ENV{PICO_SDK_FETCH_FROM_GIT})`
+- L11: `message("Using PICO_SDK_FETCH_FROM_GIT from environment ('${PICO_SDK_FETCH_FROM_GIT}')")`
+- L12: `endif ()`
+- L15: `set(PICO_SDK_FETCH_FROM_GIT_PATH $ENV{PICO_SDK_FETCH_FROM_GIT_PATH})`
+- L16: `message("Using PICO_SDK_FETCH_FROM_GIT_PATH from environment ('${PICO_SDK_FETCH_FROM_GIT_PATH}')")`
+- L17: `endif ()`
+- L19: `set(PICO_SDK_PATH "${PICO_SDK_PATH}" CACHE PATH "Path to the Raspberry Pi Pico SDK")`
+- L20: `set(PICO_SDK_FETCH_FROM_GIT "${PICO_SDK_FETCH_FROM_GIT}" CACHE BOOL "Set to ON to fetch copy of SDK from git if not otherwise locatable")`
+- L21: `set(PICO_SDK_FETCH_FROM_GIT_PATH "${PICO_SDK_FETCH_FROM_GIT_PATH}" CACHE FILEPATH "location to download SDK")`
+- L25: `include(FetchContent)`
+- L26: `set(FETCHCONTENT_BASE_DIR_SAVE ${FETCHCONTENT_BASE_DIR})`
+- L28: `get_filename_component(FETCHCONTENT_BASE_DIR "${PICO_SDK_FETCH_FROM_GIT_PATH}" REALPATH BASE_DIR "${CMAKE_SOURCE_DIR}")`
+- L29: `endif ()`
+- L36: `message("Downloading Raspberry Pi Pico SDK")`
+- L37: `FetchContent_Populate(pico_sdk)`
+- L38: `set(PICO_SDK_PATH ${pico_sdk_SOURCE_DIR})`
+- L39: `endif ()`
+- L40: `set(FETCHCONTENT_BASE_DIR ${FETCHCONTENT_BASE_DIR_SAVE})`
+- L41: `else ()`
+- L45: `endif ()`
+- L46: `endif ()`
+- L48: `get_filename_component(PICO_SDK_PATH "${PICO_SDK_PATH}" REALPATH BASE_DIR "${CMAKE_BINARY_DIR}")`
+- L50: `message(FATAL_ERROR "Directory '${PICO_SDK_PATH}' not found")`
+- L51: `endif ()`
+- L53: `set(PICO_SDK_INIT_CMAKE_FILE ${PICO_SDK_PATH}/pico_sdk_init.cmake)`
+- L55: `message(FATAL_ERROR "Directory '${PICO_SDK_PATH}' does not appear to contain the Raspberry Pi Pico SDK")`
+- L56: `endif ()`
+- L58: `set(PICO_SDK_PATH ${PICO_SDK_PATH} CACHE PATH "Path to the Raspberry Pi Pico SDK" FORCE)`
+- L60: `include(${PICO_SDK_INIT_CMAKE_FILE})`
 
-Ubicación y relación dentro del proyecto:
-- Ruta original: prgProject/pico_sdk_import.cmake
-- Manual generado: Manuals/pico_sdk_import.cmake_manual.txt
-- No declara includes C/C++ directos, o es un archivo de texto/configuración.
-- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
 
-Forma de uso o instanciación esperada:
-- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
-- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
-- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
-- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
-
-Descripción línea a línea:
-Línea 1: `# This is a copy of <PICO_SDK_PATH>/external/pico_sdk_import.cmake`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 2: `# It can be dropped into an external project to help locate the Raspberry Pi Pico SDK.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 3: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 4: `if (DEFINED ENV{PICO_SDK_PATH} AND (NOT PICO_SDK_PATH))`
-  Explicación: Evalúa una condición para decidir si se ejecuta el bloque siguiente.
-Línea 5: `    set(PICO_SDK_PATH $ENV{PICO_SDK_PATH})`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 6: `    message("Using PICO_SDK_PATH from environment ('${PICO_SDK_PATH}')")`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 7: `endif ()`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 8: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 9: `if (DEFINED ENV{PICO_SDK_FETCH_FROM_GIT} AND (NOT PICO_SDK_FETCH_FROM_GIT))`
-  Explicación: Evalúa una condición para decidir si se ejecuta el bloque siguiente.
-Línea 10: `    set(PICO_SDK_FETCH_FROM_GIT $ENV{PICO_SDK_FETCH_FROM_GIT})`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 11: `    message("Using PICO_SDK_FETCH_FROM_GIT from environment ('${PICO_SDK_FETCH_FROM_GIT}')")`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 12: `endif ()`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 13: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 14: `if (DEFINED ENV{PICO_SDK_FETCH_FROM_GIT_PATH} AND (NOT PICO_SDK_FETCH_FROM_GIT_PATH))`
-  Explicación: Evalúa una condición para decidir si se ejecuta el bloque siguiente.
-Línea 15: `    set(PICO_SDK_FETCH_FROM_GIT_PATH $ENV{PICO_SDK_FETCH_FROM_GIT_PATH})`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 16: `    message("Using PICO_SDK_FETCH_FROM_GIT_PATH from environment ('${PICO_SDK_FETCH_FROM_GIT_PATH}')")`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 17: `endif ()`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 18: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 19: `set(PICO_SDK_PATH "${PICO_SDK_PATH}" CACHE PATH "Path to the Raspberry Pi Pico SDK")`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 20: `set(PICO_SDK_FETCH_FROM_GIT "${PICO_SDK_FETCH_FROM_GIT}" CACHE BOOL "Set to ON to fetch copy of SDK from git if not otherwise locatable")`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 21: `set(PICO_SDK_FETCH_FROM_GIT_PATH "${PICO_SDK_FETCH_FROM_GIT_PATH}" CACHE FILEPATH "location to download SDK")`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 22: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 23: `if (NOT PICO_SDK_PATH)`
-  Explicación: Evalúa una condición para decidir si se ejecuta el bloque siguiente.
-Línea 24: `    if (PICO_SDK_FETCH_FROM_GIT)`
-  Explicación: Evalúa una condición para decidir si se ejecuta el bloque siguiente.
-Línea 25: `        include(FetchContent)`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 26: `        set(FETCHCONTENT_BASE_DIR_SAVE ${FETCHCONTENT_BASE_DIR})`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 27: `        if (PICO_SDK_FETCH_FROM_GIT_PATH)`
-  Explicación: Evalúa una condición para decidir si se ejecuta el bloque siguiente.
-Línea 28: `            get_filename_component(FETCHCONTENT_BASE_DIR "${PICO_SDK_FETCH_FROM_GIT_PATH}" REALPATH BASE_DIR "${CMAKE_SOURCE_DIR}")`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 29: `        endif ()`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 30: `        FetchContent_Declare(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 31: `            pico_sdk`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 32: `            GIT_REPOSITORY https://github.com/raspberrypi/pico-sdk`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 33: `            GIT_TAG master`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 34: `        )`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 35: `        if (NOT pico_sdk)`
-  Explicación: Evalúa una condición para decidir si se ejecuta el bloque siguiente.
-Línea 36: `            message("Downloading Raspberry Pi Pico SDK")`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 37: `            FetchContent_Populate(pico_sdk)`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 38: `            set(PICO_SDK_PATH ${pico_sdk_SOURCE_DIR})`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 39: `        endif ()`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 40: `        set(FETCHCONTENT_BASE_DIR ${FETCHCONTENT_BASE_DIR_SAVE})`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 41: `    else ()`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 42: `        message(FATAL_ERROR`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 43: `            "Raspberry Pi Pico SDK location was not specified. Please set PICO_SDK_PATH or set PICO_SDK_FETCH_FROM_GIT to ON."`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 44: `        )`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 45: `    endif ()`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 46: `endif ()`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 47: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 48: `get_filename_component(PICO_SDK_PATH "${PICO_SDK_PATH}" REALPATH BASE_DIR "${CMAKE_BINARY_DIR}")`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 49: `if (NOT EXISTS ${PICO_SDK_PATH})`
-  Explicación: Evalúa una condición para decidir si se ejecuta el bloque siguiente.
-Línea 50: `    message(FATAL_ERROR "Directory '${PICO_SDK_PATH}' not found")`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 51: `endif ()`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 52: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 53: `set(PICO_SDK_INIT_CMAKE_FILE ${PICO_SDK_PATH}/pico_sdk_init.cmake)`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 54: `if (NOT EXISTS ${PICO_SDK_INIT_CMAKE_FILE})`
-  Explicación: Evalúa una condición para decidir si se ejecuta el bloque siguiente.
-Línea 55: `    message(FATAL_ERROR "Directory '${PICO_SDK_PATH}' does not appear to contain the Raspberry Pi Pico SDK")`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 56: `endif ()`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 57: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 58: `set(PICO_SDK_PATH ${PICO_SDK_PATH} CACHE PATH "Path to the Raspberry Pi Pico SDK" FORCE)`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 59: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 60: `include(${PICO_SDK_INIT_CMAKE_FILE})`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-
-Resumen funcional:
-- prgProject/pico_sdk_import.cmake participa en el SDK aportando configuración de compilación CMake/Pico SDK.
-- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `# This is a copy of <PICO_SDK_PATH>/external/pico_sdk_import.cmake` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 2 | `# It can be dropped into an external project to help locate the Raspberry Pi Pico SDK.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 3 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 4 | `if (DEFINED ENV{PICO_SDK_PATH} AND (NOT PICO_SDK_PATH))` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 5 | `    set(PICO_SDK_PATH $ENV{PICO_SDK_PATH})` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 6 | `    message("Using PICO_SDK_PATH from environment ('${PICO_SDK_PATH}')")` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 7 | `endif ()` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 8 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 9 | `if (DEFINED ENV{PICO_SDK_FETCH_FROM_GIT} AND (NOT PICO_SDK_FETCH_FROM_GIT))` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 10 | `    set(PICO_SDK_FETCH_FROM_GIT $ENV{PICO_SDK_FETCH_FROM_GIT})` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 11 | `    message("Using PICO_SDK_FETCH_FROM_GIT from environment ('${PICO_SDK_FETCH_FROM_GIT}')")` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 12 | `endif ()` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 13 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 14 | `if (DEFINED ENV{PICO_SDK_FETCH_FROM_GIT_PATH} AND (NOT PICO_SDK_FETCH_FROM_GIT_PATH))` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 15 | `    set(PICO_SDK_FETCH_FROM_GIT_PATH $ENV{PICO_SDK_FETCH_FROM_GIT_PATH})` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 16 | `    message("Using PICO_SDK_FETCH_FROM_GIT_PATH from environment ('${PICO_SDK_FETCH_FROM_GIT_PATH}')")` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 17 | `endif ()` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 18 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 19 | `set(PICO_SDK_PATH "${PICO_SDK_PATH}" CACHE PATH "Path to the Raspberry Pi Pico SDK")` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 20 | `set(PICO_SDK_FETCH_FROM_GIT "${PICO_SDK_FETCH_FROM_GIT}" CACHE BOOL "Set to ON to fetch copy of SDK from git if not otherwise locatable")` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 21 | `set(PICO_SDK_FETCH_FROM_GIT_PATH "${PICO_SDK_FETCH_FROM_GIT_PATH}" CACHE FILEPATH "location to download SDK")` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 22 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 23 | `if (NOT PICO_SDK_PATH)` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 24 | `    if (PICO_SDK_FETCH_FROM_GIT)` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 25 | `        include(FetchContent)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 26 | `        set(FETCHCONTENT_BASE_DIR_SAVE ${FETCHCONTENT_BASE_DIR})` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 27 | `        if (PICO_SDK_FETCH_FROM_GIT_PATH)` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 28 | `            get_filename_component(FETCHCONTENT_BASE_DIR "${PICO_SDK_FETCH_FROM_GIT_PATH}" REALPATH BASE_DIR "${CMAKE_SOURCE_DIR}")` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 29 | `        endif ()` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 30 | `        FetchContent_Declare(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 31 | `            pico_sdk` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 32 | `            GIT_REPOSITORY https://github.com/raspberrypi/pico-sdk` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 33 | `            GIT_TAG master` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 34 | `        )` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 35 | `        if (NOT pico_sdk)` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 36 | `            message("Downloading Raspberry Pi Pico SDK")` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 37 | `            FetchContent_Populate(pico_sdk)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 38 | `            set(PICO_SDK_PATH ${pico_sdk_SOURCE_DIR})` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 39 | `        endif ()` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 40 | `        set(FETCHCONTENT_BASE_DIR ${FETCHCONTENT_BASE_DIR_SAVE})` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 41 | `    else ()` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 42 | `        message(FATAL_ERROR` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 43 | `            "Raspberry Pi Pico SDK location was not specified. Please set PICO_SDK_PATH or set PICO_SDK_FETCH_FROM_GIT to ON."` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 44 | `        )` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 45 | `    endif ()` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 46 | `endif ()` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 47 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 48 | `get_filename_component(PICO_SDK_PATH "${PICO_SDK_PATH}" REALPATH BASE_DIR "${CMAKE_BINARY_DIR}")` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 49 | `if (NOT EXISTS ${PICO_SDK_PATH})` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 50 | `    message(FATAL_ERROR "Directory '${PICO_SDK_PATH}' not found")` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 51 | `endif ()` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 52 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 53 | `set(PICO_SDK_INIT_CMAKE_FILE ${PICO_SDK_PATH}/pico_sdk_init.cmake)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 54 | `if (NOT EXISTS ${PICO_SDK_INIT_CMAKE_FILE})` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 55 | `    message(FATAL_ERROR "Directory '${PICO_SDK_PATH}' does not appear to contain the Raspberry Pi Pico SDK")` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 56 | `endif ()` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 57 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 58 | `set(PICO_SDK_PATH ${PICO_SDK_PATH} CACHE PATH "Path to the Raspberry Pi Pico SDK" FORCE)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 59 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 60 | `include(${PICO_SDK_INIT_CMAKE_FILE})` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |

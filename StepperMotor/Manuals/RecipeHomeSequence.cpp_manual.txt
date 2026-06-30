@@ -1,0 +1,60 @@
+MANUAL ACTUALIZADO - prgProject/RecipeHomeSequence.cpp
+================================================================================
+Funcion inicial del archivo
+- Documenta, parsea o proporciona recetas de maquina para configurar ejes desde texto/microSD.
+
+Metodos, variables, secciones o instancias detectadas
+- L13: `return executeHomeSequence(motion, { recipe.homeOrder[0] });`
+- L15: `return executeHomeSequence(motion, { recipe.homeOrder[0], recipe.homeOrder[1] });`
+- L17: `return executeHomeSequence(motion, { recipe.homeOrder[0], recipe.homeOrder[1], recipe.homeOrder[2] });`
+- L19: `return executeHomeSequence(motion, { recipe.homeOrder[0], recipe.homeOrder[1], recipe.homeOrder[2], recipe.homeOrder[3] });`
+- L21: `return executeHomeSequence(motion, { recipe.homeOrder[0], recipe.homeOrder[1], recipe.homeOrder[2], recipe.homeOrder[3], recipe.homeOrder[4] });`
+- L23: `return executeHomeSequence(motion, { recipe.homeOrder[0], recipe.homeOrder[1], recipe.homeOrder[2], recipe.homeOrder[3], recipe.homeOrder[4], recipe.homeOrder[5] });`
+- L25: `return executeHomeSequence(motion, { recipe.homeOrder[0], recipe.homeOrder[1], recipe.homeOrder[2], recipe.homeOrder[3], recipe.homeOrder[4], recipe.homeOrder[5], recipe.homeOrder[6] });`
+- L27: `return executeHomeSequence(motion, { recipe.homeOrder[0], recipe.homeOrder[1], recipe.homeOrder[2], recipe.homeOrder[3], recipe.homeOrder[4], recipe.homeOrder[5], recipe.homeOrder[6], recipe.homeOrder[7] });`
+- L29: `printf("WARNING: recipe has no homeOrder. Using controller default HOME order.\n");`
+- L30: `motion.init();`
+- L31: `return motion.homeAll() ? HOME_SEQUENCE_OK : HOME_SEQUENCE_ERROR_HOMING_FAILED;`
+
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
+
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#include "RecipeHomeSequence.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 2 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 3 | `#include <stdio.h>` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 4 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 5 | `#include "HomeSequenceFunctionBlock.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 6 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 7 | `int executeRecipeHomeSequence(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 8 | `    AdvanceMotionController& motion,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 9 | `    const MachineRecipe& recipe` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 10 | `) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 11 | `    switch (recipe.homeOrderCount) {` | Parte de una maquina de estados o seleccion multiple. |
+| 12 | `        case 1:` | Parte de una maquina de estados o seleccion multiple. |
+| 13 | `            return executeHomeSequence(motion, { recipe.homeOrder[0] });` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 14 | `        case 2:` | Parte de una maquina de estados o seleccion multiple. |
+| 15 | `            return executeHomeSequence(motion, { recipe.homeOrder[0], recipe.homeOrder[1] });` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 16 | `        case 3:` | Parte de una maquina de estados o seleccion multiple. |
+| 17 | `            return executeHomeSequence(motion, { recipe.homeOrder[0], recipe.homeOrder[1], recipe.homeOrder[2] });` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 18 | `        case 4:` | Parte de una maquina de estados o seleccion multiple. |
+| 19 | `            return executeHomeSequence(motion, { recipe.homeOrder[0], recipe.homeOrder[1], recipe.homeOrder[2], recipe.homeOrder[3] });` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 20 | `        case 5:` | Parte de una maquina de estados o seleccion multiple. |
+| 21 | `            return executeHomeSequence(motion, { recipe.homeOrder[0], recipe.homeOrder[1], recipe.homeOrder[2], recipe.homeOrder[3], recipe.homeOrder[4] });` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 22 | `        case 6:` | Parte de una maquina de estados o seleccion multiple. |
+| 23 | `            return executeHomeSequence(motion, { recipe.homeOrder[0], recipe.homeOrder[1], recipe.homeOrder[2], recipe.homeOrder[3], recipe.homeOrder[4], recipe.homeOrder[5] });` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 24 | `        case 7:` | Parte de una maquina de estados o seleccion multiple. |
+| 25 | `            return executeHomeSequence(motion, { recipe.homeOrder[0], recipe.homeOrder[1], recipe.homeOrder[2], recipe.homeOrder[3], recipe.homeOrder[4], recipe.homeOrder[5], recipe.homeOrder[6] });` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 26 | `        case 8:` | Parte de una maquina de estados o seleccion multiple. |
+| 27 | `            return executeHomeSequence(motion, { recipe.homeOrder[0], recipe.homeOrder[1], recipe.homeOrder[2], recipe.homeOrder[3], recipe.homeOrder[4], recipe.homeOrder[5], recipe.homeOrder[6], recipe.homeOrder[7] });` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 28 | `        default:` | Parte de una maquina de estados o seleccion multiple. |
+| 29 | `            printf("WARNING: recipe has no homeOrder. Using controller default HOME order.\n");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 30 | `            motion.init();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 31 | `            return motion.homeAll() ? HOME_SEQUENCE_OK : HOME_SEQUENCE_ERROR_HOMING_FAILED;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 32 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 33 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |

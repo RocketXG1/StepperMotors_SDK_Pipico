@@ -1,0 +1,67 @@
+MANUAL ACTUALIZADO - lib/objConfig/SdRecipeStorage.h
+================================================================================
+Funcion inicial del archivo
+- Documenta, parsea o proporciona recetas de maquina para configurar ejes desde texto/microSD.
+
+Metodos, variables, secciones o instancias detectadas
+- L6: `static const char* const DEFAULT_RECIPE_PATH = "0:/config/axes.txt";`
+- L8: `struct SdSpiConfig {`
+- L16: `static SdSpiConfig createDefault();`
+- L19: `class SdRecipeStorage {`
+- L24: `void clearError();`
+- L25: `bool fail(const char* message);`
+- L28: `explicit SdRecipeStorage(const SdSpiConfig& selectedSpiConfig);`
+- L30: `bool begin();`
+- L36: `void end();`
+- L38: `const char* getLastError() const;`
+
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
+
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#ifndef SD_RECIPE_STORAGE_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 2 | `#define SD_RECIPE_STORAGE_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 3 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 4 | `#include "pico/stdlib.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 5 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 6 | `static const char* const DEFAULT_RECIPE_PATH = "0:/config/axes.txt";` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 7 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 8 | `struct SdSpiConfig {` | Declara una estructura de datos para agrupar variables relacionadas. |
+| 9 | `    uint spiIndex;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 10 | `    uint misoPin;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 11 | `    uint csPin;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 12 | `    uint sckPin;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 13 | `    uint mosiPin;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 14 | `    uint baudRateHz;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 15 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 16 | `    static SdSpiConfig createDefault();` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 17 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 18 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 19 | `class SdRecipeStorage {` | Declara una clase y agrupa estado interno con metodos relacionados. |
+| 20 | `private:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 21 | `    SdSpiConfig spiConfig;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 22 | `    char lastError[160];` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 23 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 24 | `    void clearError();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 25 | `    bool fail(const char* message);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 26 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 27 | `public:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 28 | `    explicit SdRecipeStorage(const SdSpiConfig& selectedSpiConfig);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 29 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 30 | `    bool begin();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 31 | `    bool readTextFile(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 32 | `        const char* filePath,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 33 | `        char* outputBuffer,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 34 | `        uint outputBufferSize` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 35 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 36 | `    void end();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 37 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 38 | `    const char* getLastError() const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 39 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 40 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 41 | `#endif` | Directiva de preprocesador que protege o cierra la inclusion del header. |

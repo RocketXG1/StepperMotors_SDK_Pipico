@@ -1,0 +1,34 @@
+MANUAL ACTUALIZADO - prgProject/RecipeLoader.h
+================================================================================
+Funcion inicial del archivo
+- Documenta, parsea o proporciona recetas de maquina para configurar ejes desde texto/microSD.
+
+Metodos, variables, secciones o instancias detectadas
+- L6: `enum class RecipeLoadStatus {`
+- L11: `const char* getRecipeLoadStatusMessage(RecipeLoadStatus status);`
+- L13: `RecipeLoadStatus loadRecipeFromMicroSdOrFallback(MachineRecipe& recipe);`
+
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
+
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#ifndef RECIPE_LOADER_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 2 | `#define RECIPE_LOADER_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 3 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 4 | `#include "MachineRecipe.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 5 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 6 | `enum class RecipeLoadStatus {` | Declara un conjunto de constantes con nombre. |
+| 7 | `    Ok,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 8 | `    DefaultRecipeInvalid` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 9 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 10 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 11 | `const char* getRecipeLoadStatusMessage(RecipeLoadStatus status);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 12 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 13 | `RecipeLoadStatus loadRecipeFromMicroSdOrFallback(MachineRecipe& recipe);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 14 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 15 | `#endif` | Directiva de preprocesador que protege o cierra la inclusion del header. |

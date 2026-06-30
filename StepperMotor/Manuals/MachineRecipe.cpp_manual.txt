@@ -1,0 +1,590 @@
+MANUAL ACTUALIZADO - src/srcConfig/MachineRecipe.cpp
+================================================================================
+Funcion inicial del archivo
+- Documenta, parsea o proporciona recetas de maquina para configurar ejes desde texto/microSD.
+
+Metodos, variables, secciones o instancias detectadas
+- L7: `void MachineRecipe::reset() {`
+- L8: `version = 1;`
+- L9: `axisCount = 0;`
+- L10: `homeOrderCount = 0;`
+- L12: `for (uint axisIndex = 0; axisIndex < MACHINE_RECIPE_MAX_AXES; axisIndex++) {`
+- L13: `axes[axisIndex].enabled = false;`
+- L14: `axes[axisIndex].config = StepperAxisConfig::createBase();`
+- L15: `axes[axisIndex].beltPitchMm = 1.0f;`
+- L16: `axes[axisIndex].pulleyTeeth = 1;`
+- L19: `for (uint orderIndex = 0; orderIndex < MACHINE_RECIPE_MAX_HOME_ORDER; orderIndex++) {`
+- L20: `homeOrder[orderIndex][0] = '\0';`
+- L24: `MachineRecipeParser::MachineRecipeParser() {`
+- L25: `clearError();`
+- L28: `void MachineRecipeParser::clearError() {`
+- L29: `lastError[0] = '\0';`
+- L32: `bool MachineRecipeParser::fail(const char* message) {`
+- L33: `std::snprintf(lastError, sizeof(lastError), "%s", message);`
+- L37: `const char* MachineRecipeParser::getLastError() const {`
+- L41: `void MachineRecipeParser::trim(char* text) {`
+- L42: `if (text == nullptr) {`
+- L46: `char* start = text;`
+- L47: `while (*start == ' ' || *start == '\t' || *start == '\r' || *start == '\n') {`
+- L51: `if (start != text) {`
+- L52: `std::memmove(text, start, std::strlen(start) + 1);`
+- L55: `size_t length = std::strlen(text);`
+- L57: `char current = text[length - 1];`
+- L58: `if (current != ' ' && current != '\t' && current != '\r' && current != '\n') {`
+- L61: `text[length - 1] = '\0';`
+- L66: `bool MachineRecipeParser::textEqualsIgnoreCase(const char* left, const char* right) {`
+- L67: `if (left == nullptr || right == nullptr) {`
+- L71: `uint index = 0;`
+- L72: `while (left[index] != '\0' && right[index] != '\0') {`
+- L73: `char leftChar = left[index];`
+- L74: `char rightChar = right[index];`
+- L76: `if (leftChar >= 'a' && leftChar <= 'z') {`
+- L77: `leftChar = leftChar - ('a' - 'A');`
+- L79: `if (rightChar >= 'a' && rightChar <= 'z') {`
+- L80: `rightChar = rightChar - ('a' - 'A');`
+- L83: `if (leftChar != rightChar) {`
+- L90: `return left[index] == '\0' && right[index] == '\0';`
+- L93: `bool MachineRecipeParser::parseBool(const char* text, bool& outputValue) {`
+- L95: `outputValue = true;`
+- L100: `outputValue = false;`
+- L107: `bool MachineRecipeParser::parseUint(const char* text, uint& outputValue) {`
+- L108: `char* end = nullptr;`
+- L109: `unsigned long parsed = std::strtoul(text, &end, 10);`
+- L110: `if (end == text || *end != '\0') {`
+- L113: `outputValue = (uint)parsed;`
+- L117: `bool MachineRecipeParser::parseFloat(const char* text, float& outputValue) {`
+- L118: `char* end = nullptr;`
+- L119: `float parsed = std::strtof(text, &end);`
+- L120: `if (end == text || *end != '\0') {`
+- L123: `outputValue = parsed;`
+- L132: `const char* prefix = "axis ";`
+- L133: `size_t prefixLength = std::strlen(prefix);`
+- L135: `if (std::strncmp(sectionName, prefix, prefixLength) != 0) {`
+- L139: `StepperAxisConfig temp = StepperAxisConfig::createBase();`
+- L144: `std::snprintf(outputAxisName, outputSize, "%s", temp.axisName);`
+- L153: `std::snprintf(buffer, sizeof(buffer), "%s", value);`
+- L155: `recipe.homeOrderCount = 0;`
+- L157: `char* token = std::strtok(buffer, ",");`
+- L158: `while (token != nullptr && recipe.homeOrderCount < MACHINE_RECIPE_MAX_HOME_ORDER) {`
+- L159: `trim(token);`
+- L160: `StepperAxisConfig temp = StepperAxisConfig::createBase();`
+- L170: `token = std::strtok(nullptr, ",");`
+- L179: `bool boolValue = false;`
+- L180: `uint uintValue = 0;`
+- L181: `float floatValue = 0.0f;`
+- L185: `axis.enabled = boolValue;`
+- L186: `} else if (textEqualsIgnoreCase(key, "mechanism")) {`
+- L188: `axis.config.mechanismType = AxisMechanismType::BELT_DRIVE;`
+- L189: `} else if (textEqualsIgnoreCase(value, "lead_screw") || textEqualsIgnoreCase(value, "leadscrew")) {`
+- L190: `axis.config.mechanismType = AxisMechanismType::LEAD_SCREW;`
+- L192: `return fail("Invalid mechanism value.");`
+- L194: `} else if (textEqualsIgnoreCase(key, "stepPin")) {`
+- L196: `axis.config.stepPin = uintValue;`
+- L197: `} else if (textEqualsIgnoreCase(key, "dirPin")) {`
+- L199: `axis.config.dirPin = uintValue;`
+- L200: `} else if (textEqualsIgnoreCase(key, "enablePin")) {`
+- L202: `axis.config.enablePin = uintValue;`
+- L203: `} else if (textEqualsIgnoreCase(key, "enableActiveLow")) {`
+- L205: `axis.config.enableActiveLow = boolValue;`
+- L206: `} else if (textEqualsIgnoreCase(key, "directionInvert")) {`
+- L208: `axis.config.directionInvert = boolValue;`
+- L209: `} else if (textEqualsIgnoreCase(key, "motorStepsPerRev")) {`
+- L211: `axis.config.motorStepsPerRev = uintValue;`
+- L212: `} else if (textEqualsIgnoreCase(key, "microsteps")) {`
+- L214: `axis.config.microsteps = uintValue;`
+- L215: `} else if (textEqualsIgnoreCase(key, "travelPerRevolutionMm") || textEqualsIgnoreCase(key, "screwPitchMm")) {`
+- L217: `axis.config.travelPerRevolutionMm = floatValue;`
+- L218: `} else if (textEqualsIgnoreCase(key, "beltPitchMm")) {`
+- L220: `axis.beltPitchMm = floatValue;`
+- L221: `axis.config.travelPerRevolutionMm = axis.beltPitchMm * (float)axis.pulleyTeeth;`
+- L222: `} else if (textEqualsIgnoreCase(key, "pulleyTeeth")) {`
+- L224: `axis.pulleyTeeth = uintValue;`
+- L225: `axis.config.travelPerRevolutionMm = axis.beltPitchMm * (float)axis.pulleyTeeth;`
+- L226: `} else if (textEqualsIgnoreCase(key, "gearRatio")) {`
+- L228: `axis.config.gearRatio = floatValue;`
+- L229: `} else if (textEqualsIgnoreCase(key, "maxSpeedMmS")) {`
+- L231: `axis.config.maxSpeedMmS = floatValue;`
+- L232: `} else if (textEqualsIgnoreCase(key, "accelerationMmS2")) {`
+- L234: `axis.config.accelerationMmS2 = floatValue;`
+- L235: `} else if (textEqualsIgnoreCase(key, "homeEnabled")) {`
+- L237: `axis.config.homeEnabled = boolValue;`
+- L238: `} else if (textEqualsIgnoreCase(key, "homePin")) {`
+- L240: `axis.config.homePin = uintValue;`
+- L241: `} else if (textEqualsIgnoreCase(key, "homeActiveLow")) {`
+- L243: `axis.config.homeActiveLow = boolValue;`
+- L244: `} else if (textEqualsIgnoreCase(key, "homeUsePullup")) {`
+- L246: `axis.config.homeUsePullup = boolValue;`
+- L247: `} else if (textEqualsIgnoreCase(key, "homeDirectionPositive")) {`
+- L249: `axis.config.homeDirectionPositive = boolValue;`
+- L250: `} else if (textEqualsIgnoreCase(key, "homeSimulationEnabled")) {`
+- L252: `axis.config.homeSimulationEnabled = boolValue;`
+- L253: `} else if (textEqualsIgnoreCase(key, "homingSeekSpeedMmS")) {`
+- L255: `axis.config.homingSeekSpeedMmS = floatValue;`
+- L256: `} else if (textEqualsIgnoreCase(key, "homingLatchSpeedMmS")) {`
+- L258: `axis.config.homingLatchSpeedMmS = floatValue;`
+- L259: `} else if (textEqualsIgnoreCase(key, "homingBackoffMm")) {`
+- L261: `axis.config.homingBackoffMm = floatValue;`
+
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
+
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#include "MachineRecipe.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 2 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 3 | `#include <cstdlib>` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 4 | `#include <cstring>` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 5 | `#include <cstdio>` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 6 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 7 | `void MachineRecipe::reset() {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 8 | `    version = 1;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 9 | `    axisCount = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 10 | `    homeOrderCount = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 11 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 12 | `    for (uint axisIndex = 0; axisIndex < MACHINE_RECIPE_MAX_AXES; axisIndex++) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 13 | `        axes[axisIndex].enabled = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 14 | `        axes[axisIndex].config = StepperAxisConfig::createBase();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 15 | `        axes[axisIndex].beltPitchMm = 1.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 16 | `        axes[axisIndex].pulleyTeeth = 1;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 17 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 18 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 19 | `    for (uint orderIndex = 0; orderIndex < MACHINE_RECIPE_MAX_HOME_ORDER; orderIndex++) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 20 | `        homeOrder[orderIndex][0] = '\0';` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 21 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 22 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 23 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 24 | `MachineRecipeParser::MachineRecipeParser() {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 25 | `    clearError();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 26 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 27 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 28 | `void MachineRecipeParser::clearError() {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 29 | `    lastError[0] = '\0';` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 30 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 31 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 32 | `bool MachineRecipeParser::fail(const char* message) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 33 | `    std::snprintf(lastError, sizeof(lastError), "%s", message);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 34 | `    return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 35 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 36 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 37 | `const char* MachineRecipeParser::getLastError() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 38 | `    return lastError;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 39 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 40 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 41 | `void MachineRecipeParser::trim(char* text) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 42 | `    if (text == nullptr) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 43 | `        return;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 44 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 45 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 46 | `    char* start = text;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 47 | `    while (*start == ' ' \|\| *start == '\t' \|\| *start == '\r' \|\| *start == '\n') {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 48 | `        start++;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 49 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 50 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 51 | `    if (start != text) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 52 | `        std::memmove(text, start, std::strlen(start) + 1);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 53 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 54 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 55 | `    size_t length = std::strlen(text);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 56 | `    while (length > 0) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 57 | `        char current = text[length - 1];` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 58 | `        if (current != ' ' && current != '\t' && current != '\r' && current != '\n') {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 59 | `            break;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 60 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 61 | `        text[length - 1] = '\0';` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 62 | `        length--;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 63 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 64 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 65 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 66 | `bool MachineRecipeParser::textEqualsIgnoreCase(const char* left, const char* right) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 67 | `    if (left == nullptr \|\| right == nullptr) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 68 | `        return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 69 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 70 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 71 | `    uint index = 0;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 72 | `    while (left[index] != '\0' && right[index] != '\0') {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 73 | `        char leftChar = left[index];` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 74 | `        char rightChar = right[index];` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 75 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 76 | `        if (leftChar >= 'a' && leftChar <= 'z') {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 77 | `            leftChar = leftChar - ('a' - 'A');` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 78 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 79 | `        if (rightChar >= 'a' && rightChar <= 'z') {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 80 | `            rightChar = rightChar - ('a' - 'A');` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 81 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 82 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 83 | `        if (leftChar != rightChar) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 84 | `            return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 85 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 86 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 87 | `        index++;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 88 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 89 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 90 | `    return left[index] == '\0' && right[index] == '\0';` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 91 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 92 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 93 | `bool MachineRecipeParser::parseBool(const char* text, bool& outputValue) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 94 | `    if (textEqualsIgnoreCase(text, "true") \|\| textEqualsIgnoreCase(text, "yes") \|\| std::strcmp(text, "1") == 0) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 95 | `        outputValue = true;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 96 | `        return true;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 97 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 98 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 99 | `    if (textEqualsIgnoreCase(text, "false") \|\| textEqualsIgnoreCase(text, "no") \|\| std::strcmp(text, "0") == 0) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 100 | `        outputValue = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 101 | `        return true;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 102 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 103 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 104 | `    return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 105 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 106 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 107 | `bool MachineRecipeParser::parseUint(const char* text, uint& outputValue) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 108 | `    char* end = nullptr;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 109 | `    unsigned long parsed = std::strtoul(text, &end, 10);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 110 | `    if (end == text \|\| *end != '\0') {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 111 | `        return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 112 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 113 | `    outputValue = (uint)parsed;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 114 | `    return true;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 115 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 116 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 117 | `bool MachineRecipeParser::parseFloat(const char* text, float& outputValue) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 118 | `    char* end = nullptr;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 119 | `    float parsed = std::strtof(text, &end);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 120 | `    if (end == text \|\| *end != '\0') {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 121 | `        return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 122 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 123 | `    outputValue = parsed;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 124 | `    return true;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 125 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 126 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 127 | `bool MachineRecipeParser::parseAxisSectionName(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 128 | `    const char* sectionName,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 129 | `    char outputAxisName[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 130 | `    uint outputSize` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 131 | `) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 132 | `    const char* prefix = "axis ";` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 133 | `    size_t prefixLength = std::strlen(prefix);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 134 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 135 | `    if (std::strncmp(sectionName, prefix, prefixLength) != 0) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 136 | `        return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 137 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 138 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 139 | `    StepperAxisConfig temp = StepperAxisConfig::createBase();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 140 | `    if (!temp.setAxisName(sectionName + prefixLength)) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 141 | `        return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 142 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 143 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 144 | `    std::snprintf(outputAxisName, outputSize, "%s", temp.axisName);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 145 | `    return true;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 146 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 147 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 148 | `void MachineRecipeParser::parseHomeOrder(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 149 | `    const char* value,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 150 | `    MachineRecipe& recipe` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 151 | `) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 152 | `    char buffer[160];` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 153 | `    std::snprintf(buffer, sizeof(buffer), "%s", value);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 154 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 155 | `    recipe.homeOrderCount = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 156 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 157 | `    char* token = std::strtok(buffer, ",");` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 158 | `    while (token != nullptr && recipe.homeOrderCount < MACHINE_RECIPE_MAX_HOME_ORDER) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 159 | `        trim(token);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 160 | `        StepperAxisConfig temp = StepperAxisConfig::createBase();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 161 | `        if (temp.setAxisName(token)) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 162 | `            std::snprintf(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 163 | `                recipe.homeOrder[recipe.homeOrderCount],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 164 | `                StepperAxisConfig::AXIS_NAME_MAX_LENGTH,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 165 | `                "%s",` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 166 | `                temp.axisName` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 167 | `            );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 168 | `            recipe.homeOrderCount++;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 169 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 170 | `        token = std::strtok(nullptr, ",");` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 171 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 172 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 173 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 174 | `bool MachineRecipeParser::applyAxisValue(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 175 | `    MachineRecipeAxis& axis,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 176 | `    const char* key,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 177 | `    const char* value` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 178 | `) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 179 | `    bool boolValue = false;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 180 | `    uint uintValue = 0;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 181 | `    float floatValue = 0.0f;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 182 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 183 | `    if (textEqualsIgnoreCase(key, "enabled")) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 184 | `        if (!parseBool(value, boolValue)) return fail("Invalid boolean value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 185 | `        axis.enabled = boolValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 186 | `    } else if (textEqualsIgnoreCase(key, "mechanism")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 187 | `        if (textEqualsIgnoreCase(value, "belt") \|\| textEqualsIgnoreCase(value, "belt_drive")) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 188 | `            axis.config.mechanismType = AxisMechanismType::BELT_DRIVE;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 189 | `        } else if (textEqualsIgnoreCase(value, "lead_screw") \|\| textEqualsIgnoreCase(value, "leadscrew")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 190 | `            axis.config.mechanismType = AxisMechanismType::LEAD_SCREW;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 191 | `        } else {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 192 | `            return fail("Invalid mechanism value.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 193 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 194 | `    } else if (textEqualsIgnoreCase(key, "stepPin")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 195 | `        if (!parseUint(value, uintValue)) return fail("Invalid stepPin value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 196 | `        axis.config.stepPin = uintValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 197 | `    } else if (textEqualsIgnoreCase(key, "dirPin")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 198 | `        if (!parseUint(value, uintValue)) return fail("Invalid dirPin value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 199 | `        axis.config.dirPin = uintValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 200 | `    } else if (textEqualsIgnoreCase(key, "enablePin")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 201 | `        if (!parseUint(value, uintValue)) return fail("Invalid enablePin value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 202 | `        axis.config.enablePin = uintValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 203 | `    } else if (textEqualsIgnoreCase(key, "enableActiveLow")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 204 | `        if (!parseBool(value, boolValue)) return fail("Invalid enableActiveLow value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 205 | `        axis.config.enableActiveLow = boolValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 206 | `    } else if (textEqualsIgnoreCase(key, "directionInvert")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 207 | `        if (!parseBool(value, boolValue)) return fail("Invalid directionInvert value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 208 | `        axis.config.directionInvert = boolValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 209 | `    } else if (textEqualsIgnoreCase(key, "motorStepsPerRev")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 210 | `        if (!parseUint(value, uintValue)) return fail("Invalid motorStepsPerRev value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 211 | `        axis.config.motorStepsPerRev = uintValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 212 | `    } else if (textEqualsIgnoreCase(key, "microsteps")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 213 | `        if (!parseUint(value, uintValue)) return fail("Invalid microsteps value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 214 | `        axis.config.microsteps = uintValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 215 | `    } else if (textEqualsIgnoreCase(key, "travelPerRevolutionMm") \|\| textEqualsIgnoreCase(key, "screwPitchMm")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 216 | `        if (!parseFloat(value, floatValue)) return fail("Invalid travel value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 217 | `        axis.config.travelPerRevolutionMm = floatValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 218 | `    } else if (textEqualsIgnoreCase(key, "beltPitchMm")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 219 | `        if (!parseFloat(value, floatValue)) return fail("Invalid beltPitchMm value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 220 | `        axis.beltPitchMm = floatValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 221 | `        axis.config.travelPerRevolutionMm = axis.beltPitchMm * (float)axis.pulleyTeeth;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 222 | `    } else if (textEqualsIgnoreCase(key, "pulleyTeeth")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 223 | `        if (!parseUint(value, uintValue)) return fail("Invalid pulleyTeeth value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 224 | `        axis.pulleyTeeth = uintValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 225 | `        axis.config.travelPerRevolutionMm = axis.beltPitchMm * (float)axis.pulleyTeeth;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 226 | `    } else if (textEqualsIgnoreCase(key, "gearRatio")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 227 | `        if (!parseFloat(value, floatValue)) return fail("Invalid gearRatio value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 228 | `        axis.config.gearRatio = floatValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 229 | `    } else if (textEqualsIgnoreCase(key, "maxSpeedMmS")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 230 | `        if (!parseFloat(value, floatValue)) return fail("Invalid maxSpeedMmS value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 231 | `        axis.config.maxSpeedMmS = floatValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 232 | `    } else if (textEqualsIgnoreCase(key, "accelerationMmS2")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 233 | `        if (!parseFloat(value, floatValue)) return fail("Invalid accelerationMmS2 value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 234 | `        axis.config.accelerationMmS2 = floatValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 235 | `    } else if (textEqualsIgnoreCase(key, "homeEnabled")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 236 | `        if (!parseBool(value, boolValue)) return fail("Invalid homeEnabled value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 237 | `        axis.config.homeEnabled = boolValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 238 | `    } else if (textEqualsIgnoreCase(key, "homePin")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 239 | `        if (!parseUint(value, uintValue)) return fail("Invalid homePin value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 240 | `        axis.config.homePin = uintValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 241 | `    } else if (textEqualsIgnoreCase(key, "homeActiveLow")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 242 | `        if (!parseBool(value, boolValue)) return fail("Invalid homeActiveLow value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 243 | `        axis.config.homeActiveLow = boolValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 244 | `    } else if (textEqualsIgnoreCase(key, "homeUsePullup")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 245 | `        if (!parseBool(value, boolValue)) return fail("Invalid homeUsePullup value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 246 | `        axis.config.homeUsePullup = boolValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 247 | `    } else if (textEqualsIgnoreCase(key, "homeDirectionPositive")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 248 | `        if (!parseBool(value, boolValue)) return fail("Invalid homeDirectionPositive value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 249 | `        axis.config.homeDirectionPositive = boolValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 250 | `    } else if (textEqualsIgnoreCase(key, "homeSimulationEnabled")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 251 | `        if (!parseBool(value, boolValue)) return fail("Invalid homeSimulationEnabled value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 252 | `        axis.config.homeSimulationEnabled = boolValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 253 | `    } else if (textEqualsIgnoreCase(key, "homingSeekSpeedMmS")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 254 | `        if (!parseFloat(value, floatValue)) return fail("Invalid homingSeekSpeedMmS value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 255 | `        axis.config.homingSeekSpeedMmS = floatValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 256 | `    } else if (textEqualsIgnoreCase(key, "homingLatchSpeedMmS")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 257 | `        if (!parseFloat(value, floatValue)) return fail("Invalid homingLatchSpeedMmS value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 258 | `        axis.config.homingLatchSpeedMmS = floatValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 259 | `    } else if (textEqualsIgnoreCase(key, "homingBackoffMm")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 260 | `        if (!parseFloat(value, floatValue)) return fail("Invalid homingBackoffMm value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 261 | `        axis.config.homingBackoffMm = floatValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 262 | `    } else if (textEqualsIgnoreCase(key, "maxHomingTravelMm")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 263 | `        if (!parseFloat(value, floatValue)) return fail("Invalid maxHomingTravelMm value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 264 | `        axis.config.maxHomingTravelMm = floatValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 265 | `    } else if (textEqualsIgnoreCase(key, "homePositionMm")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 266 | `        if (!parseFloat(value, floatValue)) return fail("Invalid homePositionMm value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 267 | `        axis.config.homePositionMm = floatValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 268 | `    } else if (textEqualsIgnoreCase(key, "minLimitEnabled")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 269 | `        if (!parseBool(value, boolValue)) return fail("Invalid minLimitEnabled value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 270 | `        axis.config.minLimitEnabled = boolValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 271 | `    } else if (textEqualsIgnoreCase(key, "minLimitPin")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 272 | `        if (!parseUint(value, uintValue)) return fail("Invalid minLimitPin value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 273 | `        axis.config.minLimitPin = uintValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 274 | `    } else if (textEqualsIgnoreCase(key, "minLimitActiveLow")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 275 | `        if (!parseBool(value, boolValue)) return fail("Invalid minLimitActiveLow value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 276 | `        axis.config.minLimitActiveLow = boolValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 277 | `    } else if (textEqualsIgnoreCase(key, "minLimitUsePullup")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 278 | `        if (!parseBool(value, boolValue)) return fail("Invalid minLimitUsePullup value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 279 | `        axis.config.minLimitUsePullup = boolValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 280 | `    } else if (textEqualsIgnoreCase(key, "maxLimitEnabled")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 281 | `        if (!parseBool(value, boolValue)) return fail("Invalid maxLimitEnabled value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 282 | `        axis.config.maxLimitEnabled = boolValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 283 | `    } else if (textEqualsIgnoreCase(key, "maxLimitPin")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 284 | `        if (!parseUint(value, uintValue)) return fail("Invalid maxLimitPin value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 285 | `        axis.config.maxLimitPin = uintValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 286 | `    } else if (textEqualsIgnoreCase(key, "maxLimitActiveLow")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 287 | `        if (!parseBool(value, boolValue)) return fail("Invalid maxLimitActiveLow value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 288 | `        axis.config.maxLimitActiveLow = boolValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 289 | `    } else if (textEqualsIgnoreCase(key, "maxLimitUsePullup")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 290 | `        if (!parseBool(value, boolValue)) return fail("Invalid maxLimitUsePullup value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 291 | `        axis.config.maxLimitUsePullup = boolValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 292 | `    } else if (textEqualsIgnoreCase(key, "softLimitsEnabled")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 293 | `        if (!parseBool(value, boolValue)) return fail("Invalid softLimitsEnabled value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 294 | `        axis.config.softLimitsEnabled = boolValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 295 | `    } else if (textEqualsIgnoreCase(key, "softLimitMinMm")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 296 | `        if (!parseFloat(value, floatValue)) return fail("Invalid softLimitMinMm value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 297 | `        axis.config.softLimitMinMm = floatValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 298 | `    } else if (textEqualsIgnoreCase(key, "softLimitMaxMm")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 299 | `        if (!parseFloat(value, floatValue)) return fail("Invalid softLimitMaxMm value.");` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 300 | `        axis.config.softLimitMaxMm = floatValue;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 301 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 302 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 303 | `    return true;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 304 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 305 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 306 | `bool MachineRecipeParser::validateRecipe(const MachineRecipe& recipe) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 307 | `    if (recipe.axisCount < 1) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 308 | `        return fail("Recipe must define at least one enabled axis.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 309 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 310 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 311 | `    for (uint i = 0; i < recipe.axisCount; i++) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 312 | `        const StepperAxisConfig& config = recipe.axes[i].config;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 313 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 314 | `        if (std::strcmp(config.axisName, "UNNAMED") == 0 \|\| config.axisName[0] == '\0') {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 315 | `            return fail("Recipe contains an unnamed axis.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 316 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 317 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 318 | `        if (config.stepPin == StepperAxisConfig::PIN_NOT_USED \|\|` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 319 | `            config.dirPin == StepperAxisConfig::PIN_NOT_USED \|\|` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 320 | `            config.enablePin == StepperAxisConfig::PIN_NOT_USED) {` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 321 | `            return fail("Enabled axis is missing step, dir or enable pin.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 322 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 323 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 324 | `        if (config.motorStepsPerRev == 0 \|\| config.microsteps == 0) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 325 | `            return fail("Enabled axis has invalid motor steps or microsteps.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 326 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 327 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 328 | `        if (config.travelPerRevolutionMm <= 0.0f \|\| config.gearRatio <= 0.0f) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 329 | `            return fail("Enabled axis has invalid mechanical travel or gear ratio.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 330 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 331 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 332 | `        if (config.maxSpeedMmS <= 0.0f \|\| config.accelerationMmS2 <= 0.0f) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 333 | `            return fail("Enabled axis has invalid speed or acceleration.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 334 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 335 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 336 | `        if (config.softLimitsEnabled && config.softLimitMinMm >= config.softLimitMaxMm) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 337 | `            return fail("Enabled axis has invalid software limits.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 338 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 339 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 340 | `        for (uint j = i + 1; j < recipe.axisCount; j++) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 341 | `            if (std::strcmp(config.axisName, recipe.axes[j].config.axisName) == 0) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 342 | `                return fail("Recipe contains duplicated axis names.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 343 | `            }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 344 | `            if (config.stepPin == recipe.axes[j].config.stepPin) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 345 | `                return fail("Recipe contains duplicated STEP pins.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 346 | `            }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 347 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 348 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 349 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 350 | `    return true;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 351 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 352 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 353 | `bool MachineRecipeParser::parse(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 354 | `    const char* recipeText,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 355 | `    MachineRecipe& outputRecipe` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 356 | `) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 357 | `    clearError();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 358 | `    outputRecipe.reset();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 359 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 360 | `    if (recipeText == nullptr \|\| recipeText[0] == '\0') {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 361 | `        return fail("Recipe text is empty.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 362 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 363 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 364 | `    char line[240];` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 365 | `    char currentSection[48] = "";` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 366 | `    MachineRecipeAxis* currentAxis = nullptr;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 367 | `    const char* cursor = recipeText;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 368 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 369 | `    while (*cursor != '\0') {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 370 | `        uint lineLength = 0;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 371 | `        while (cursor[lineLength] != '\0' && cursor[lineLength] != '\n' && lineLength < sizeof(line) - 1) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 372 | `            line[lineLength] = cursor[lineLength];` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 373 | `            lineLength++;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 374 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 375 | `        line[lineLength] = '\0';` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 376 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 377 | `        while (cursor[lineLength] != '\0' && cursor[lineLength] != '\n') {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 378 | `            lineLength++;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 379 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 380 | `        cursor += lineLength;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 381 | `        if (*cursor == '\n') {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 382 | `            cursor++;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 383 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 384 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 385 | `        char* comment = std::strchr(line, '#');` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 386 | `        if (comment != nullptr) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 387 | `            *comment = '\0';` | Comentario/documentacion interna del codigo o configuracion. |
+| 388 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 389 | `        comment = std::strchr(line, ';');` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 390 | `        if (comment != nullptr) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 391 | `            *comment = '\0';` | Comentario/documentacion interna del codigo o configuracion. |
+| 392 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 393 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 394 | `        trim(line);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 395 | `        if (line[0] == '\0') {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 396 | `            continue;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 397 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 398 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 399 | `        if (line[0] == '[') {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 400 | `            char* sectionEnd = std::strchr(line, ']');` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 401 | `            if (sectionEnd == nullptr) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 402 | `                return fail("Invalid section header.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 403 | `            }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 404 | `            *sectionEnd = '\0';` | Comentario/documentacion interna del codigo o configuracion. |
+| 405 | `            std::snprintf(currentSection, sizeof(currentSection), "%s", line + 1);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 406 | `            trim(currentSection);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 407 | `            currentAxis = nullptr;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 408 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 409 | `            char axisName[StepperAxisConfig::AXIS_NAME_MAX_LENGTH];` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 410 | `            if (parseAxisSectionName(currentSection, axisName, sizeof(axisName))) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 411 | `                if (outputRecipe.axisCount >= MACHINE_RECIPE_MAX_AXES) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 412 | `                    return fail("Recipe has more axes than supported.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 413 | `                }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 414 | `                currentAxis = &outputRecipe.axes[outputRecipe.axisCount];` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 415 | `                currentAxis->enabled = true;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 416 | `                currentAxis->config = StepperAxisConfig::createBase();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 417 | `                currentAxis->beltPitchMm = 1.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 418 | `                currentAxis->pulleyTeeth = 1;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 419 | `                currentAxis->config.setAxisName(axisName);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 420 | `                outputRecipe.axisCount++;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 421 | `            }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 422 | `            continue;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 423 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 424 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 425 | `        char* equals = std::strchr(line, '=');` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 426 | `        if (equals == nullptr) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 427 | `            return fail("Invalid key-value line.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 428 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 429 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 430 | `        *equals = '\0';` | Comentario/documentacion interna del codigo o configuracion. |
+| 431 | `        char* key = line;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 432 | `        char* value = equals + 1;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 433 | `        trim(key);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 434 | `        trim(value);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 435 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 436 | `        if (textEqualsIgnoreCase(currentSection, "project")) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 437 | `            if (textEqualsIgnoreCase(key, "version")) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 438 | `                uint parsedVersion = 0;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 439 | `                if (!parseUint(value, parsedVersion)) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 440 | `                    return fail("Invalid project version.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 441 | `                }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 442 | `                outputRecipe.version = (int)parsedVersion;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 443 | `            } else if (textEqualsIgnoreCase(key, "homeOrder")) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 444 | `                parseHomeOrder(value, outputRecipe);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 445 | `            }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 446 | `        } else if (currentAxis != nullptr) {` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 447 | `            if (!applyAxisValue(*currentAxis, key, value)) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 448 | `                return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 449 | `            }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 450 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 451 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 452 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 453 | `    return validateRecipe(outputRecipe);` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 454 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |

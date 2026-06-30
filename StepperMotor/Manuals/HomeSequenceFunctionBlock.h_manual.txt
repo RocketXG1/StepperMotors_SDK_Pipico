@@ -1,82 +1,53 @@
-MANUAL DETALLADO: FunctionBlocks/HomeSequenceFunctionBlock.h
-============================================================
+MANUAL ACTUALIZADO - FunctionBlocks/HomeSequenceFunctionBlock.h
+================================================================================
+Funcion inicial del archivo
+- Encapsula la secuencia de HOME como bloque reusable.
 
-Finalidad: Este archivo funciona como bloque funcional para ejecutar una secuencia de homing de forma encapsulada.
+Metodos, variables, secciones o instancias detectadas
+- L8: `enum HomeSequenceResult {`
+- L9: `HOME_SEQUENCE_OK = 0,`
+- L10: `HOME_SEQUENCE_ERROR_INVALID_CONTROLLER = 1,`
+- L11: `HOME_SEQUENCE_ERROR_INVALID_ORDER = 2,`
+- L12: `HOME_SEQUENCE_ERROR_HOMING_FAILED = 3`
+- L15: `enum HomeSequenceStep {`
+- L16: `HOME_STEP_VALIDATE_CONTROLLER = 0,`
 
-Ubicación y relación dentro del proyecto:
-- Ruta original: FunctionBlocks/HomeSequenceFunctionBlock.h
-- Manual generado: Manuals/HomeSequenceFunctionBlock.h_manual.txt
-- Dependencias declaradas por include: initializer_list, AdvanceMotionController.h
-- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
 
-Forma de uso o instanciación esperada:
-- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
-- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
-- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
-- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
-
-Descripción línea a línea:
-Línea 1: `#ifndef HOME_SEQUENCE_FUNCTION_BLOCK_H`
-  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
-Línea 2: `#define HOME_SEQUENCE_FUNCTION_BLOCK_H`
-  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
-Línea 3: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 4: `#include <initializer_list>`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 5: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 6: `#include "AdvanceMotionController.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 7: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 8: `enum HomeSequenceResult {`
-  Explicación: Declara un conjunto cerrado de valores simbólicos.
-Línea 9: `    HOME_SEQUENCE_OK = 0,`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 10: `    HOME_SEQUENCE_ERROR_INVALID_CONTROLLER = 1,`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 11: `    HOME_SEQUENCE_ERROR_INVALID_ORDER = 2,`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 12: `    HOME_SEQUENCE_ERROR_HOMING_FAILED = 3`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 13: `};`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 14: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 15: `enum HomeSequenceStep {`
-  Explicación: Declara un conjunto cerrado de valores simbólicos.
-Línea 16: `    HOME_STEP_VALIDATE_CONTROLLER = 0,`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 17: `    HOME_STEP_PRINT_AXIS_MAP,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 18: `    HOME_STEP_CONFIGURE_HOME_ORDER,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 19: `    HOME_STEP_PRINT_HOME_ORDER,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 20: `    HOME_STEP_INITIALIZE_HARDWARE,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 21: `    HOME_STEP_EXECUTE_HOME,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 22: `    HOME_STEP_DONE`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 23: `};`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 24: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 25: `int executeHomeSequence(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 26: `    AdvanceMotionController& motion,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 27: `    std::initializer_list<const char*> orderedAxisNames`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 28: `);`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 29: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 30: `#endif`
-  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
-
-Resumen funcional:
-- FunctionBlocks/HomeSequenceFunctionBlock.h participa en el SDK aportando bloque funcional para ejecutar una secuencia de homing de forma encapsulada.
-- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#ifndef HOME_SEQUENCE_FUNCTION_BLOCK_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 2 | `#define HOME_SEQUENCE_FUNCTION_BLOCK_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 3 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 4 | `#include <initializer_list>` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 5 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 6 | `#include "AdvanceMotionController.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 7 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 8 | `enum HomeSequenceResult {` | Declara un conjunto de constantes con nombre. |
+| 9 | `    HOME_SEQUENCE_OK = 0,` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 10 | `    HOME_SEQUENCE_ERROR_INVALID_CONTROLLER = 1,` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 11 | `    HOME_SEQUENCE_ERROR_INVALID_ORDER = 2,` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 12 | `    HOME_SEQUENCE_ERROR_HOMING_FAILED = 3` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 13 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 14 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 15 | `enum HomeSequenceStep {` | Declara un conjunto de constantes con nombre. |
+| 16 | `    HOME_STEP_VALIDATE_CONTROLLER = 0,` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 17 | `    HOME_STEP_PRINT_AXIS_MAP,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 18 | `    HOME_STEP_CONFIGURE_HOME_ORDER,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 19 | `    HOME_STEP_PRINT_HOME_ORDER,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 20 | `    HOME_STEP_INITIALIZE_HARDWARE,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 21 | `    HOME_STEP_EXECUTE_HOME,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 22 | `    HOME_STEP_DONE` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 23 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 24 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 25 | `int executeHomeSequence(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 26 | `    AdvanceMotionController& motion,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 27 | `    std::initializer_list<const char*> orderedAxisNames` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 28 | `);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 29 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 30 | `#endif` | Directiva de preprocesador que protege o cierra la inclusion del header. |

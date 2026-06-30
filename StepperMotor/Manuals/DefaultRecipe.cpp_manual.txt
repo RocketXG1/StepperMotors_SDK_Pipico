@@ -1,0 +1,245 @@
+MANUAL ACTUALIZADO - src/srcConfig/DefaultRecipe.cpp
+================================================================================
+Funcion inicial del archivo
+- Documenta, parsea o proporciona recetas de maquina para configurar ejes desde texto/microSD.
+
+Metodos, variables, secciones o instancias detectadas
+- L3: `const char DEFAULT_MACHINE_RECIPE_TEXT[] = R"RECIPE([project]`
+- L4: `version=1`
+- L5: `homeOrder=Z,X,Y`
+- L8: `enabled=true`
+- L9: `mechanism=belt`
+- L10: `stepPin=2`
+- L11: `dirPin=10`
+- L12: `enablePin=13`
+- L13: `enableActiveLow=true`
+- L14: `directionInvert=false`
+- L15: `motorStepsPerRev=200`
+- L16: `microsteps=16`
+- L17: `beltPitchMm=2.0`
+- L18: `pulleyTeeth=20`
+- L19: `gearRatio=1.0`
+- L20: `maxSpeedMmS=100.0`
+- L21: `accelerationMmS2=300.0`
+- L22: `homeEnabled=true`
+- L23: `homePin=16`
+- L24: `homeActiveLow=true`
+- L25: `homeUsePullup=true`
+- L26: `homeDirectionPositive=false`
+- L27: `homeSimulationEnabled=false`
+- L28: `homingSeekSpeedMmS=30.0`
+- L29: `homingLatchSpeedMmS=5.0`
+- L30: `homingBackoffMm=3.0`
+- L31: `maxHomingTravelMm=350.0`
+- L32: `homePositionMm=0.0`
+- L33: `minLimitEnabled=true`
+- L34: `minLimitPin=17`
+- L35: `minLimitActiveLow=true`
+- L36: `minLimitUsePullup=true`
+- L37: `maxLimitEnabled=true`
+- L38: `maxLimitPin=18`
+- L39: `maxLimitActiveLow=true`
+- L40: `maxLimitUsePullup=true`
+- L41: `softLimitsEnabled=true`
+- L42: `softLimitMinMm=0.0`
+- L43: `softLimitMaxMm=300.0`
+- L46: `enabled=true`
+- L47: `mechanism=belt`
+- L48: `stepPin=3`
+- L49: `dirPin=11`
+- L50: `enablePin=14`
+- L51: `enableActiveLow=true`
+- L52: `directionInvert=false`
+- L53: `motorStepsPerRev=200`
+- L54: `microsteps=16`
+- L55: `beltPitchMm=2.0`
+- L56: `pulleyTeeth=20`
+- L57: `gearRatio=1.0`
+- L58: `maxSpeedMmS=100.0`
+- L59: `accelerationMmS2=300.0`
+- L60: `homeEnabled=true`
+- L61: `homePin=19`
+- L62: `homeActiveLow=true`
+- L63: `homeUsePullup=true`
+- L64: `homeDirectionPositive=false`
+- L65: `homeSimulationEnabled=false`
+- L66: `homingSeekSpeedMmS=30.0`
+- L67: `homingLatchSpeedMmS=5.0`
+- L68: `homingBackoffMm=3.0`
+- L69: `maxHomingTravelMm=350.0`
+- L70: `homePositionMm=0.0`
+- L71: `minLimitEnabled=true`
+- L72: `minLimitPin=20`
+- L73: `minLimitActiveLow=true`
+- L74: `minLimitUsePullup=true`
+- L75: `maxLimitEnabled=true`
+- L76: `maxLimitPin=21`
+- L77: `maxLimitActiveLow=true`
+- L78: `maxLimitUsePullup=true`
+- L79: `softLimitsEnabled=true`
+- L80: `softLimitMinMm=0.0`
+- L81: `softLimitMaxMm=300.0`
+- L84: `enabled=true`
+- L85: `mechanism=lead_screw`
+- L86: `stepPin=4`
+- L87: `dirPin=12`
+- L88: `enablePin=15`
+- L89: `enableActiveLow=true`
+- L90: `directionInvert=false`
+- L91: `motorStepsPerRev=200`
+- L92: `microsteps=16`
+- L93: `screwPitchMm=8.0`
+- L94: `gearRatio=1.0`
+- L95: `maxSpeedMmS=20.0`
+- L96: `accelerationMmS2=100.0`
+- L97: `homeEnabled=true`
+- L98: `homePin=22`
+- L99: `homeActiveLow=true`
+- L100: `homeUsePullup=true`
+- L101: `homeDirectionPositive=true`
+- L102: `homeSimulationEnabled=false`
+- L103: `homingSeekSpeedMmS=10.0`
+- L104: `homingLatchSpeedMmS=2.0`
+- L105: `homingBackoffMm=2.0`
+- L106: `maxHomingTravelMm=120.0`
+- L107: `homePositionMm=0.0`
+- L108: `minLimitEnabled=true`
+- L109: `minLimitPin=26`
+- L110: `minLimitActiveLow=true`
+- L111: `minLimitUsePullup=true`
+- L112: `maxLimitEnabled=true`
+- L113: `maxLimitPin=27`
+- L114: `maxLimitActiveLow=true`
+- L115: `maxLimitUsePullup=true`
+- L116: `softLimitsEnabled=true`
+- L117: `softLimitMinMm=0.0`
+- L118: `softLimitMaxMm=100.0`
+
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
+
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#include "DefaultRecipe.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 2 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 3 | `const char DEFAULT_MACHINE_RECIPE_TEXT[] = R"RECIPE([project]` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 4 | `version=1` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 5 | `homeOrder=Z,X,Y` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 6 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 7 | `[axis X]` | Seccion de receta/configuracion que agrupa parametros. |
+| 8 | `enabled=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 9 | `mechanism=belt` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 10 | `stepPin=2` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 11 | `dirPin=10` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 12 | `enablePin=13` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 13 | `enableActiveLow=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 14 | `directionInvert=false` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 15 | `motorStepsPerRev=200` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 16 | `microsteps=16` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 17 | `beltPitchMm=2.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 18 | `pulleyTeeth=20` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 19 | `gearRatio=1.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 20 | `maxSpeedMmS=100.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 21 | `accelerationMmS2=300.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 22 | `homeEnabled=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 23 | `homePin=16` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 24 | `homeActiveLow=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 25 | `homeUsePullup=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 26 | `homeDirectionPositive=false` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 27 | `homeSimulationEnabled=false` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 28 | `homingSeekSpeedMmS=30.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 29 | `homingLatchSpeedMmS=5.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 30 | `homingBackoffMm=3.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 31 | `maxHomingTravelMm=350.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 32 | `homePositionMm=0.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 33 | `minLimitEnabled=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 34 | `minLimitPin=17` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 35 | `minLimitActiveLow=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 36 | `minLimitUsePullup=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 37 | `maxLimitEnabled=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 38 | `maxLimitPin=18` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 39 | `maxLimitActiveLow=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 40 | `maxLimitUsePullup=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 41 | `softLimitsEnabled=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 42 | `softLimitMinMm=0.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 43 | `softLimitMaxMm=300.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 44 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 45 | `[axis Y]` | Seccion de receta/configuracion que agrupa parametros. |
+| 46 | `enabled=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 47 | `mechanism=belt` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 48 | `stepPin=3` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 49 | `dirPin=11` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 50 | `enablePin=14` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 51 | `enableActiveLow=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 52 | `directionInvert=false` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 53 | `motorStepsPerRev=200` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 54 | `microsteps=16` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 55 | `beltPitchMm=2.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 56 | `pulleyTeeth=20` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 57 | `gearRatio=1.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 58 | `maxSpeedMmS=100.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 59 | `accelerationMmS2=300.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 60 | `homeEnabled=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 61 | `homePin=19` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 62 | `homeActiveLow=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 63 | `homeUsePullup=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 64 | `homeDirectionPositive=false` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 65 | `homeSimulationEnabled=false` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 66 | `homingSeekSpeedMmS=30.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 67 | `homingLatchSpeedMmS=5.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 68 | `homingBackoffMm=3.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 69 | `maxHomingTravelMm=350.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 70 | `homePositionMm=0.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 71 | `minLimitEnabled=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 72 | `minLimitPin=20` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 73 | `minLimitActiveLow=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 74 | `minLimitUsePullup=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 75 | `maxLimitEnabled=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 76 | `maxLimitPin=21` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 77 | `maxLimitActiveLow=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 78 | `maxLimitUsePullup=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 79 | `softLimitsEnabled=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 80 | `softLimitMinMm=0.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 81 | `softLimitMaxMm=300.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 82 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 83 | `[axis Z]` | Seccion de receta/configuracion que agrupa parametros. |
+| 84 | `enabled=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 85 | `mechanism=lead_screw` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 86 | `stepPin=4` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 87 | `dirPin=12` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 88 | `enablePin=15` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 89 | `enableActiveLow=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 90 | `directionInvert=false` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 91 | `motorStepsPerRev=200` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 92 | `microsteps=16` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 93 | `screwPitchMm=8.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 94 | `gearRatio=1.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 95 | `maxSpeedMmS=20.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 96 | `accelerationMmS2=100.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 97 | `homeEnabled=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 98 | `homePin=22` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 99 | `homeActiveLow=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 100 | `homeUsePullup=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 101 | `homeDirectionPositive=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 102 | `homeSimulationEnabled=false` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 103 | `homingSeekSpeedMmS=10.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 104 | `homingLatchSpeedMmS=2.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 105 | `homingBackoffMm=2.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 106 | `maxHomingTravelMm=120.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 107 | `homePositionMm=0.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 108 | `minLimitEnabled=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 109 | `minLimitPin=26` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 110 | `minLimitActiveLow=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 111 | `minLimitUsePullup=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 112 | `maxLimitEnabled=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 113 | `maxLimitPin=27` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 114 | `maxLimitActiveLow=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 115 | `maxLimitUsePullup=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 116 | `softLimitsEnabled=true` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 117 | `softLimitMinMm=0.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 118 | `softLimitMaxMm=100.0` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 119 | `)RECIPE";` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
