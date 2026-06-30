@@ -1,0 +1,29 @@
+MANUAL ACTUALIZADO - prgProject/RecipeHomeSequence.h
+================================================================================
+Funcion inicial del archivo
+- Documenta, parsea o proporciona recetas de maquina para configurar ejes desde texto/microSD.
+
+Metodos, variables, secciones o instancias detectadas
+- No se detectaron simbolos de codigo; es texto/configuracion de referencia.
+
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
+
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#ifndef RECIPE_HOME_SEQUENCE_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 2 | `#define RECIPE_HOME_SEQUENCE_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 3 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 4 | `#include "AdvanceMotionController.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 5 | `#include "MachineRecipe.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 6 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 7 | `int executeRecipeHomeSequence(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 8 | `    AdvanceMotionController& motion,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 9 | `    const MachineRecipe& recipe` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 10 | `);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 11 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 12 | `#endif` | Directiva de preprocesador que protege o cierra la inclusion del header. |

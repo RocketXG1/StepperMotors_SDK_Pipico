@@ -1,0 +1,170 @@
+MANUAL ACTUALIZADO - src/srcConfig/SdRecipeStorage.cpp
+================================================================================
+Funcion inicial del archivo
+- Documenta, parsea o proporciona recetas de maquina para configurar ejes desde texto/microSD.
+
+Metodos, variables, secciones o instancias detectadas
+- L13: `SdSpiConfig SdSpiConfig::createDefault() {`
+- L14: `SdSpiConfig config = {};`
+- L15: `config.spiIndex = 0;`
+- L16: `config.misoPin = 16;`
+- L17: `config.csPin = 17;`
+- L18: `config.sckPin = 18;`
+- L19: `config.mosiPin = 19;`
+- L20: `config.baudRateHz = 1000 * 1000;`
+- L24: `SdRecipeStorage::SdRecipeStorage(const SdSpiConfig& selectedSpiConfig) {`
+- L25: `spiConfig = selectedSpiConfig;`
+- L26: `clearError();`
+- L29: `void SdRecipeStorage::clearError() {`
+- L30: `lastError[0] = '\0';`
+- L33: `bool SdRecipeStorage::fail(const char* message) {`
+- L34: `std::snprintf(lastError, sizeof(lastError), "%s", message);`
+- L38: `const char* SdRecipeStorage::getLastError() const {`
+- L42: `bool SdRecipeStorage::begin() {`
+- L43: `clearError();`
+- L45: `spi_inst_t* spiPort = (spiConfig.spiIndex == 0) ? spi0 : spi1;`
+- L47: `spi_init(spiPort, spiConfig.baudRateHz);`
+- L48: `gpio_set_function(spiConfig.misoPin, GPIO_FUNC_SPI);`
+- L49: `gpio_set_function(spiConfig.sckPin, GPIO_FUNC_SPI);`
+- L50: `gpio_set_function(spiConfig.mosiPin, GPIO_FUNC_SPI);`
+- L52: `gpio_init(spiConfig.csPin);`
+- L53: `gpio_set_dir(spiConfig.csPin, GPIO_OUT);`
+- L54: `gpio_put(spiConfig.csPin, 1);`
+- L58: `FRESULT result = f_mount(&filesystem, "0:", 1);`
+- L59: `if (result != FR_OK) {`
+- L60: `return fail("Could not mount microSD filesystem.");`
+- L64: `return fail("microSD FatFs backend is not enabled. Set STEPPER_ENABLE_MICROSD_FATFS=ON and provide FatFs/SD disk I/O.");`
+- L73: `if (outputBuffer == nullptr || outputBufferSize == 0) {`
+- L74: `return fail("Invalid output buffer.");`
+- L77: `outputBuffer[0] = '\0';`
+- L81: `FRESULT result = f_open(&file, filePath, FA_READ | FA_OPEN_EXISTING);`
+- L82: `if (result != FR_OK) {`
+- L83: `return fail("Could not open recipe file on microSD.");`
+- L86: `UINT bytesRead = 0;`
+- L87: `result = f_read(&file, outputBuffer, outputBufferSize - 1, &bytesRead);`
+- L88: `f_close(&file);`
+- L90: `if (result != FR_OK) {`
+- L91: `outputBuffer[0] = '\0';`
+- L92: `return fail("Could not read recipe file from microSD.");`
+- L95: `outputBuffer[bytesRead] = '\0';`
+- L98: `(void)filePath;`
+- L99: `return fail("microSD FatFs backend is not enabled. Recipe file was not read from card.");`
+- L103: `void SdRecipeStorage::end() {`
+- L105: `f_mount(nullptr, "0:", 0);`
+
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
+
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#include "SdRecipeStorage.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 2 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 3 | `#include <cstdio>` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 4 | `#include <cstring>` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 5 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 6 | `#include "hardware/gpio.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 7 | `#include "hardware/spi.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 8 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 9 | `#if STEPPER_ENABLE_MICROSD_FATFS` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 10 | `#include "ff.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 11 | `#endif` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 12 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 13 | `SdSpiConfig SdSpiConfig::createDefault() {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 14 | `    SdSpiConfig config = {};` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 15 | `    config.spiIndex = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 16 | `    config.misoPin = 16;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 17 | `    config.csPin = 17;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 18 | `    config.sckPin = 18;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 19 | `    config.mosiPin = 19;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 20 | `    config.baudRateHz = 1000 * 1000;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 21 | `    return config;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 22 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 23 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 24 | `SdRecipeStorage::SdRecipeStorage(const SdSpiConfig& selectedSpiConfig) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 25 | `    spiConfig = selectedSpiConfig;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 26 | `    clearError();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 27 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 28 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 29 | `void SdRecipeStorage::clearError() {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 30 | `    lastError[0] = '\0';` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 31 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 32 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 33 | `bool SdRecipeStorage::fail(const char* message) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 34 | `    std::snprintf(lastError, sizeof(lastError), "%s", message);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 35 | `    return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 36 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 37 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 38 | `const char* SdRecipeStorage::getLastError() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 39 | `    return lastError;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 40 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 41 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 42 | `bool SdRecipeStorage::begin() {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 43 | `    clearError();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 44 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 45 | `    spi_inst_t* spiPort = (spiConfig.spiIndex == 0) ? spi0 : spi1;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 46 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 47 | `    spi_init(spiPort, spiConfig.baudRateHz);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 48 | `    gpio_set_function(spiConfig.misoPin, GPIO_FUNC_SPI);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 49 | `    gpio_set_function(spiConfig.sckPin, GPIO_FUNC_SPI);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 50 | `    gpio_set_function(spiConfig.mosiPin, GPIO_FUNC_SPI);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 51 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 52 | `    gpio_init(spiConfig.csPin);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 53 | `    gpio_set_dir(spiConfig.csPin, GPIO_OUT);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 54 | `    gpio_put(spiConfig.csPin, 1);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 55 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 56 | `#if STEPPER_ENABLE_MICROSD_FATFS` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 57 | `    static FATFS filesystem;` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 58 | `    FRESULT result = f_mount(&filesystem, "0:", 1);` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 59 | `    if (result != FR_OK) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 60 | `        return fail("Could not mount microSD filesystem.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 61 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 62 | `    return true;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 63 | `#else` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 64 | `    return fail("microSD FatFs backend is not enabled. Set STEPPER_ENABLE_MICROSD_FATFS=ON and provide FatFs/SD disk I/O.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 65 | `#endif` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 66 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 67 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 68 | `bool SdRecipeStorage::readTextFile(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 69 | `    const char* filePath,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 70 | `    char* outputBuffer,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 71 | `    uint outputBufferSize` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 72 | `) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 73 | `    if (outputBuffer == nullptr \|\| outputBufferSize == 0) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 74 | `        return fail("Invalid output buffer.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 75 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 76 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 77 | `    outputBuffer[0] = '\0';` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 78 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 79 | `#if STEPPER_ENABLE_MICROSD_FATFS` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 80 | `    FIL file;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 81 | `    FRESULT result = f_open(&file, filePath, FA_READ \| FA_OPEN_EXISTING);` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 82 | `    if (result != FR_OK) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 83 | `        return fail("Could not open recipe file on microSD.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 84 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 85 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 86 | `    UINT bytesRead = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 87 | `    result = f_read(&file, outputBuffer, outputBufferSize - 1, &bytesRead);` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 88 | `    f_close(&file);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 89 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 90 | `    if (result != FR_OK) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 91 | `        outputBuffer[0] = '\0';` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 92 | `        return fail("Could not read recipe file from microSD.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 93 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 94 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 95 | `    outputBuffer[bytesRead] = '\0';` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 96 | `    return true;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 97 | `#else` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 98 | `    (void)filePath;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 99 | `    return fail("microSD FatFs backend is not enabled. Recipe file was not read from card.");` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 100 | `#endif` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 101 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 102 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 103 | `void SdRecipeStorage::end() {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 104 | `#if STEPPER_ENABLE_MICROSD_FATFS` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 105 | `    f_mount(nullptr, "0:", 0);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 106 | `#endif` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 107 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |

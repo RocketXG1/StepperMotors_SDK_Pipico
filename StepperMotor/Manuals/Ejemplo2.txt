@@ -1,0 +1,69 @@
+Ejemplo2 - Referencia para usar 2 motores/ejes
+==============================================
+
+Funcion del archivo
+-------------------
+Este manual muestra como usar el SDK con 2 motores, normalmente X e Y. No modifica el codigo fuente: sirve como guia para adaptar main.cpp o cargar config/recipes/Ejemplo2_axes.txt desde microSD.
+
+Instancias necesarias
+--------------------
+- StepperPioPulseEngine pulseEngine(pio0, 0, 2, 10): genera pulsos STEP; X usa GP2 e Y usa GP3.
+- MachineRecipe recipe: receta con dos secciones [axis X] y [axis Y].
+- MotionSystem motionSystem: reserva los objetos de ejes y el controlador.
+- AdvanceMotionController& motion: objeto usado por el programa principal.
+
+Quien llama a quien
+------------------
+1. La receta define 2 ejes y `homeOrder=X,Y`.
+2. initializeMotionSystem instancia AdvanceStepperAxis para X e Y.
+3. AdvanceMotionController sincroniza ambos ejes con Bresenham cuando los targets tienen 2 coordenadas.
+4. Cada llamada a moveLinearTo o queueLinearTo debe enviar exactamente 2 valores: `{xMm, yMm}`.
+
+Ejemplo de flujo con 10 movimientos posibles
+-------------------------------------------
+```cpp
+StepperPioPulseEngine pulseEngine(pio0, 0, 2, 10);
+MachineRecipe recipe;
+MachineRecipeParser parser;
+parser.parse(DEFAULT_MACHINE_RECIPE_TEXT, recipe); // O leer config/recipes/Ejemplo2_axes.txt desde microSD.
+
+static MotionSystem motionSystem;
+initializeMotionSystem(recipe, pulseEngine, motionSystem);
+AdvanceMotionController& motion = *motionSystem.motion;
+
+executeRecipeHomeSequence(motion, recipe);
+
+motion.moveToSafePositionAfterHome({0.0f, 0.0f}, 25.0f);
+while (motion.isBusy()) { motion.update(); }
+
+motion.configurePathSmoothing(true, 2.0f, 0.5f, 12, 0.70f);
+motion.clearMotionQueue();
+
+// 10 movimientos absolutos en XY.
+motion.queueLinearTo({10.0f,  0.0f}, 30.0f);   // 1
+motion.queueLinearTo({25.0f, 10.0f}, 30.0f);   // 2
+motion.queueLinearTo({25.0f, 40.0f}, 35.0f);   // 3
+motion.queueLinearTo({50.0f, 40.0f}, 35.0f);   // 4
+motion.queueLinearTo({60.0f, 20.0f}, 40.0f);   // 5
+motion.queueLinearTo({80.0f, 20.0f}, 40.0f);   // 6
+motion.queueLinearTo({80.0f, 60.0f}, 40.0f);   // 7
+motion.queueLinearTo({40.0f, 60.0f}, 35.0f);   // 8
+motion.queueLinearTo({20.0f, 30.0f}, 30.0f);   // 9
+motion.queueLinearTo({0.0f,  0.0f}, 25.0f);    // 10
+
+if (!motion.prepareQueuedMoves()) {
+    motion.emergencyStop();
+}
+
+while (motion.isBusy()) {
+    motion.update();
+}
+```
+
+Notas linea por linea del patron de movimiento
+----------------------------------------------
+- `configurePathSmoothing(...)` activa suavizado; en 2 ejes si puede generar segmentos de blend.
+- `clearMotionQueue()` borra movimientos previos.
+- `queueLinearTo({x, y}, speed)` agrega un movimiento absoluto a la cola.
+- `prepareQueuedMoves()` convierte la cola cruda en movimientos planificados.
+- `motion.update()` se llama repetidamente para ejecutar la cola completa.

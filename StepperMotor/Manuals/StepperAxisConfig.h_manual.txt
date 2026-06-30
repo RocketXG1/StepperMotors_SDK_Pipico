@@ -1,588 +1,392 @@
-MANUAL DETALLADO: lib/objStepper/StepperAxisConfig.h
-====================================================
+MANUAL ACTUALIZADO - lib/objStepper/StepperAxisConfig.h
+================================================================================
+Funcion inicial del archivo
+- Define la configuracion fisica, mecanica, HOME y limites de cada eje paso a paso.
 
-Finalidad: Este archivo funciona como fábrica y contenedor de configuración de ejes stepper.
+Metodos, variables, secciones o instancias detectadas
+- L6: `enum class AxisMechanismType {`
+- L11: `struct StepperAxisConfig {`
+- L12: `static const uint PIN_NOT_USED = 255;`
+- L13: `static const uint AXIS_NAME_MAX_LENGTH = 16;`
+- L21: `setAxisName() convierte automáticamente el nombre a MAYÚSCULAS.`
+- L48: `true  = busca HOME hacia dirección positiva.`
+- L49: `false = busca HOME hacia dirección negativa.`
+- L99: `bool setAxisName(const char* name) {`
+- L100: `if (name == nullptr) {`
+- L104: `uint writeIndex = 0;`
+- L105: `bool hasValidCharacter = false;`
+- L108: `uint readIndex = 0;`
+- L109: `name[readIndex] != '\0' &&`
+- L110: `writeIndex < (AXIS_NAME_MAX_LENGTH - 1);`
+- L113: `char currentChar = name[readIndex];`
+- L116: `currentChar == ' ' ||`
+- L117: `currentChar == '\t' ||`
+- L118: `currentChar == '\r' ||`
+- L119: `currentChar == '\n'`
+- L124: `if (currentChar >= 'a' && currentChar <= 'z') {`
+- L125: `currentChar =`
+- L126: `currentChar - ('a' - 'A');`
+- L129: `axisName[writeIndex] =`
+- L132: `hasValidCharacter = true;`
+- L136: `axisName[writeIndex] = '\0';`
+- L141: `static StepperAxisConfig createBase() {`
+- L142: `StepperAxisConfig config = {};`
+- L150: `configX.setAxisName("X");`
+- L152: `config.setAxisName("UNNAMED");`
+- L154: `config.stepPin = PIN_NOT_USED;`
+- L155: `config.dirPin = PIN_NOT_USED;`
+- L156: `config.enablePin = PIN_NOT_USED;`
+- L158: `config.enableActiveLow = true;`
+- L159: `config.directionInvert = false;`
+- L161: `config.motorStepsPerRev = 200;`
+- L162: `config.microsteps = 1;`
+- L164: `config.mechanismType = AxisMechanismType::BELT_DRIVE;`
+- L165: `config.travelPerRevolutionMm = 1.0f;`
+- L166: `config.gearRatio = 1.0f;`
+- L168: `config.maxSpeedMmS = 10.0f;`
+- L169: `config.accelerationMmS2 = 50.0f;`
+- L171: `config.homeEnabled = false;`
+- L172: `config.homePin = PIN_NOT_USED;`
+- L173: `config.homeActiveLow = true;`
+- L174: `config.homeUsePullup = true;`
+- L175: `config.homeDirectionPositive = false;`
+- L176: `config.homeSimulationEnabled = false;`
+- L178: `config.homingSeekSpeedMmS = 10.0f;`
+- L179: `config.homingLatchSpeedMmS = 2.0f;`
+- L180: `config.homingBackoffMm = 3.0f;`
+- L181: `config.maxHomingTravelMm = 300.0f;`
+- L182: `config.homePositionMm = 0.0f;`
+- L184: `config.minLimitEnabled = false;`
+- L185: `config.minLimitPin = PIN_NOT_USED;`
+- L186: `config.minLimitActiveLow = true;`
+- L187: `config.minLimitUsePullup = true;`
+- L189: `config.maxLimitEnabled = false;`
+- L190: `config.maxLimitPin = PIN_NOT_USED;`
+- L191: `config.maxLimitActiveLow = true;`
+- L192: `config.maxLimitUsePullup = true;`
+- L194: `config.softLimitsEnabled = false;`
+- L195: `config.softLimitMinMm = 0.0f;`
+- L196: `config.softLimitMaxMm = 100.0f;`
+- L214: `StepperAxisConfig config = createBase();`
+- L216: `config.stepPin = stepPin;`
+- L217: `config.dirPin = dirPin;`
+- L218: `config.enablePin = enablePin;`
+- L220: `config.enableActiveLow = enableActiveLow;`
+- L221: `config.directionInvert = directionInvert;`
+- L223: `config.motorStepsPerRev = motorStepsPerRev;`
+- L224: `config.microsteps = microsteps;`
+- L226: `config.mechanismType = AxisMechanismType::LEAD_SCREW;`
+- L227: `config.travelPerRevolutionMm = screwPitchMm;`
+- L229: `if (gearRatio <= 0.0f) {`
+- L230: `gearRatio = 1.0f;`
+- L233: `config.gearRatio = gearRatio;`
+- L235: `config.maxSpeedMmS = maxSpeedMmS;`
+- L236: `config.accelerationMmS2 = accelerationMmS2;`
+- L255: `StepperAxisConfig config = createBase();`
+- L257: `config.stepPin = stepPin;`
+- L258: `config.dirPin = dirPin;`
+- L259: `config.enablePin = enablePin;`
+- L261: `config.enableActiveLow = enableActiveLow;`
+- L262: `config.directionInvert = directionInvert;`
+- L264: `config.motorStepsPerRev = motorStepsPerRev;`
+- L265: `config.microsteps = microsteps;`
+- L267: `config.mechanismType = AxisMechanismType::BELT_DRIVE;`
+- L268: `config.travelPerRevolutionMm = beltPitchMm * (float)pulleyTeeth;`
+- L270: `if (gearRatio <= 0.0f) {`
+- L271: `gearRatio = 1.0f;`
+- L274: `config.gearRatio = gearRatio;`
+- L276: `config.maxSpeedMmS = maxSpeedMmS;`
+- L277: `config.accelerationMmS2 = accelerationMmS2;`
 
-Ubicación y relación dentro del proyecto:
-- Ruta original: lib/objStepper/StepperAxisConfig.h
-- Manual generado: Manuals/StepperAxisConfig.h_manual.txt
-- Dependencias declaradas por include: pico/stdlib.h
-- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
 
-Forma de uso o instanciación esperada:
-- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
-- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
-- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
-- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
-
-Descripción línea a línea:
-Línea 1: `#ifndef STEPPER_AXIS_CONFIG_H`
-  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
-Línea 2: `#define STEPPER_AXIS_CONFIG_H`
-  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
-Línea 3: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 4: `#include "pico/stdlib.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 5: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 6: `enum class AxisMechanismType {`
-  Explicación: Declara un conjunto cerrado de valores simbólicos.
-Línea 7: `    LEAD_SCREW,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 8: `    BELT_DRIVE`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 9: `};`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 10: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 11: `struct StepperAxisConfig {`
-  Explicación: Declara una estructura de datos para transportar configuración, estado o resultados.
-Línea 12: `    static const uint PIN_NOT_USED = 255;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 13: `    static const uint AXIS_NAME_MAX_LENGTH = 16;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 14: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 15: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 16: `        Nombre obligatorio del eje.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 17: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 18: `        Ejemplo:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 19: `        "X", "Y", "Z", "A", "ROTARY", etc.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 20: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 21: `        setAxisName() convierte automáticamente el nombre a MAYÚSCULAS.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 22: `        El controlador rechazará el nombre por defecto "UNNAMED".`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 23: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 24: `    char axisName[AXIS_NAME_MAX_LENGTH];`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 25: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 26: `    uint stepPin;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 27: `    uint dirPin;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 28: `    uint enablePin;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 29: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 30: `    bool enableActiveLow;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 31: `    bool directionInvert;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 32: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 33: `    uint motorStepsPerRev;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 34: `    uint microsteps;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 35: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 36: `    AxisMechanismType mechanismType;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 37: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 38: `    float travelPerRevolutionMm;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 39: `    float gearRatio;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 40: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 41: `    float maxSpeedMmS;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 42: `    float accelerationMmS2;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 43: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 44: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 45: `        HOME.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 46: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 47: `        homeDirectionPositive:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 48: `        true  = busca HOME hacia dirección positiva.`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 49: `        false = busca HOME hacia dirección negativa.`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 50: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 51: `        directionInvert:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 52: `        Invierte físicamente el pin DIR si el motor gira al revés.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 53: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 54: `    bool homeEnabled;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 55: `    uint homePin;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 56: `    bool homeActiveLow;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 57: `    bool homeUsePullup;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 58: `    bool homeDirectionPositive;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 59: `    bool homeSimulationEnabled;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 60: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 61: `    float homingSeekSpeedMmS;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 62: `    float homingLatchSpeedMmS;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 63: `    float homingBackoffMm;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 64: `    float maxHomingTravelMm;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 65: `    float homePositionMm;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 66: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 67: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 68: `        Límites físicos.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 69: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 70: `    bool minLimitEnabled;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 71: `    uint minLimitPin;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 72: `    bool minLimitActiveLow;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 73: `    bool minLimitUsePullup;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 74: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 75: `    bool maxLimitEnabled;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 76: `    uint maxLimitPin;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 77: `    bool maxLimitActiveLow;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 78: `    bool maxLimitUsePullup;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 79: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 80: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 81: `        Límites por software.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 82: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 83: `    bool softLimitsEnabled;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 84: `    float softLimitMinMm;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 85: `    float softLimitMaxMm;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 86: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 87: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 88: `        Asigna nombre al eje.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 89: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 90: `        Parámetro:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 91: `        name:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 92: `        Texto con el nombre deseado del eje.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 93: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 94: `        Reglas:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 95: `        - Convierte minúsculas a MAYÚSCULAS.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 96: `        - Ignora espacios, tabuladores y saltos de línea.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 97: `        - Limita el nombre a AXIS_NAME_MAX_LENGTH - 1 caracteres.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 98: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 99: `    bool setAxisName(const char* name) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 100: `        if (name == nullptr) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 101: `            return false;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 102: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 103: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 104: `        uint writeIndex = 0;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 105: `        bool hasValidCharacter = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 106: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 107: `        for (`
-  Explicación: Inicia un ciclo iterativo para recorrer ejes, colas, caracteres o arreglos.
-Línea 108: `            uint readIndex = 0;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 109: `            name[readIndex] != '\0' &&`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 110: `            writeIndex < (AXIS_NAME_MAX_LENGTH - 1);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 111: `            readIndex++`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 112: `        ) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 113: `            char currentChar = name[readIndex];`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 114: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 115: `            if (`
-  Explicación: Evalúa una condición para decidir si se ejecuta el bloque siguiente.
-Línea 116: `                currentChar == ' ' ||`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 117: `                currentChar == '\t' ||`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 118: `                currentChar == '\r' ||`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 119: `                currentChar == '\n'`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 120: `            ) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 121: `                continue;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 122: `            }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 123: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 124: `            if (currentChar >= 'a' && currentChar <= 'z') {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 125: `                currentChar =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 126: `                    currentChar - ('a' - 'A');`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 127: `            }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 128: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 129: `            axisName[writeIndex] =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 130: `                currentChar;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 131: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 132: `            hasValidCharacter = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 133: `            writeIndex++;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 134: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 135: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 136: `        axisName[writeIndex] = '\0';`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 137: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 138: `        return hasValidCharacter;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 139: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 140: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 141: `    static StepperAxisConfig createBase() {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 142: `        StepperAxisConfig config = {};`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 143: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 144: `        /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 145: `            Nombre por defecto.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 146: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 147: `            Este nombre NO será aceptado por el controlador.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 148: `            Es obligatorio reemplazarlo usando:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 149: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 150: `            configX.setAxisName("X");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 151: `        */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 152: `        config.setAxisName("UNNAMED");`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 153: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 154: `        config.stepPin = PIN_NOT_USED;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 155: `        config.dirPin = PIN_NOT_USED;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 156: `        config.enablePin = PIN_NOT_USED;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 157: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 158: `        config.enableActiveLow = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 159: `        config.directionInvert = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 160: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 161: `        config.motorStepsPerRev = 200;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 162: `        config.microsteps = 1;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 163: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 164: `        config.mechanismType = AxisMechanismType::BELT_DRIVE;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 165: `        config.travelPerRevolutionMm = 1.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 166: `        config.gearRatio = 1.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 167: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 168: `        config.maxSpeedMmS = 10.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 169: `        config.accelerationMmS2 = 50.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 170: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 171: `        config.homeEnabled = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 172: `        config.homePin = PIN_NOT_USED;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 173: `        config.homeActiveLow = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 174: `        config.homeUsePullup = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 175: `        config.homeDirectionPositive = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 176: `        config.homeSimulationEnabled = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 177: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 178: `        config.homingSeekSpeedMmS = 10.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 179: `        config.homingLatchSpeedMmS = 2.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 180: `        config.homingBackoffMm = 3.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 181: `        config.maxHomingTravelMm = 300.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 182: `        config.homePositionMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 183: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 184: `        config.minLimitEnabled = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 185: `        config.minLimitPin = PIN_NOT_USED;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 186: `        config.minLimitActiveLow = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 187: `        config.minLimitUsePullup = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 188: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 189: `        config.maxLimitEnabled = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 190: `        config.maxLimitPin = PIN_NOT_USED;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 191: `        config.maxLimitActiveLow = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 192: `        config.maxLimitUsePullup = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 193: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 194: `        config.softLimitsEnabled = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 195: `        config.softLimitMinMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 196: `        config.softLimitMaxMm = 100.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 197: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 198: `        return config;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 199: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 200: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 201: `    static StepperAxisConfig createLeadScrew(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 202: `        uint stepPin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 203: `        uint dirPin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 204: `        uint enablePin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 205: `        bool enableActiveLow,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 206: `        bool directionInvert,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 207: `        uint motorStepsPerRev,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 208: `        uint microsteps,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 209: `        float screwPitchMm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 210: `        float gearRatio,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 211: `        float maxSpeedMmS,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 212: `        float accelerationMmS2`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 213: `    ) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 214: `        StepperAxisConfig config = createBase();`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 215: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 216: `        config.stepPin = stepPin;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 217: `        config.dirPin = dirPin;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 218: `        config.enablePin = enablePin;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 219: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 220: `        config.enableActiveLow = enableActiveLow;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 221: `        config.directionInvert = directionInvert;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 222: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 223: `        config.motorStepsPerRev = motorStepsPerRev;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 224: `        config.microsteps = microsteps;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 225: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 226: `        config.mechanismType = AxisMechanismType::LEAD_SCREW;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 227: `        config.travelPerRevolutionMm = screwPitchMm;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 228: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 229: `        if (gearRatio <= 0.0f) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 230: `            gearRatio = 1.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 231: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 232: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 233: `        config.gearRatio = gearRatio;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 234: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 235: `        config.maxSpeedMmS = maxSpeedMmS;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 236: `        config.accelerationMmS2 = accelerationMmS2;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 237: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 238: `        return config;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 239: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 240: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 241: `    static StepperAxisConfig createBeltDrive(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 242: `        uint stepPin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 243: `        uint dirPin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 244: `        uint enablePin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 245: `        bool enableActiveLow,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 246: `        bool directionInvert,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 247: `        uint motorStepsPerRev,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 248: `        uint microsteps,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 249: `        float beltPitchMm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 250: `        uint pulleyTeeth,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 251: `        float gearRatio,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 252: `        float maxSpeedMmS,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 253: `        float accelerationMmS2`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 254: `    ) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 255: `        StepperAxisConfig config = createBase();`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 256: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 257: `        config.stepPin = stepPin;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 258: `        config.dirPin = dirPin;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 259: `        config.enablePin = enablePin;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 260: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 261: `        config.enableActiveLow = enableActiveLow;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 262: `        config.directionInvert = directionInvert;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 263: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 264: `        config.motorStepsPerRev = motorStepsPerRev;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 265: `        config.microsteps = microsteps;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 266: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 267: `        config.mechanismType = AxisMechanismType::BELT_DRIVE;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 268: `        config.travelPerRevolutionMm = beltPitchMm * (float)pulleyTeeth;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 269: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 270: `        if (gearRatio <= 0.0f) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 271: `            gearRatio = 1.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 272: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 273: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 274: `        config.gearRatio = gearRatio;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 275: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 276: `        config.maxSpeedMmS = maxSpeedMmS;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 277: `        config.accelerationMmS2 = accelerationMmS2;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 278: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 279: `        return config;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 280: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 281: `};`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 282: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 283: `#endif`
-  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
-
-Resumen funcional:
-- lib/objStepper/StepperAxisConfig.h participa en el SDK aportando fábrica y contenedor de configuración de ejes stepper.
-- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#ifndef STEPPER_AXIS_CONFIG_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 2 | `#define STEPPER_AXIS_CONFIG_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 3 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 4 | `#include "pico/stdlib.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 5 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 6 | `enum class AxisMechanismType {` | Declara un conjunto de constantes con nombre. |
+| 7 | `    LEAD_SCREW,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 8 | `    BELT_DRIVE` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 9 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 10 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 11 | `struct StepperAxisConfig {` | Declara una estructura de datos para agrupar variables relacionadas. |
+| 12 | `    static const uint PIN_NOT_USED = 255;` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 13 | `    static const uint AXIS_NAME_MAX_LENGTH = 16;` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 14 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 15 | `    /*` | Comentario/documentacion interna del codigo o configuracion. |
+| 16 | `        Nombre obligatorio del eje.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 17 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 18 | `        Ejemplo:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 19 | `        "X", "Y", "Z", "A", "ROTARY", etc.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 20 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 21 | `        setAxisName() convierte automáticamente el nombre a MAYÚSCULAS.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 22 | `        El controlador rechazará el nombre por defecto "UNNAMED".` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 23 | `    */` | Comentario/documentacion interna del codigo o configuracion. |
+| 24 | `    char axisName[AXIS_NAME_MAX_LENGTH];` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 25 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 26 | `    uint stepPin;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 27 | `    uint dirPin;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 28 | `    uint enablePin;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 29 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 30 | `    bool enableActiveLow;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 31 | `    bool directionInvert;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 32 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 33 | `    uint motorStepsPerRev;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 34 | `    uint microsteps;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 35 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 36 | `    AxisMechanismType mechanismType;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 37 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 38 | `    float travelPerRevolutionMm;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 39 | `    float gearRatio;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 40 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 41 | `    float maxSpeedMmS;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 42 | `    float accelerationMmS2;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 43 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 44 | `    /*` | Comentario/documentacion interna del codigo o configuracion. |
+| 45 | `        HOME.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 46 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 47 | `        homeDirectionPositive:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 48 | `        true  = busca HOME hacia dirección positiva.` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 49 | `        false = busca HOME hacia dirección negativa.` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 50 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 51 | `        directionInvert:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 52 | `        Invierte físicamente el pin DIR si el motor gira al revés.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 53 | `    */` | Comentario/documentacion interna del codigo o configuracion. |
+| 54 | `    bool homeEnabled;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 55 | `    uint homePin;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 56 | `    bool homeActiveLow;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 57 | `    bool homeUsePullup;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 58 | `    bool homeDirectionPositive;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 59 | `    bool homeSimulationEnabled;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 60 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 61 | `    float homingSeekSpeedMmS;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 62 | `    float homingLatchSpeedMmS;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 63 | `    float homingBackoffMm;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 64 | `    float maxHomingTravelMm;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 65 | `    float homePositionMm;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 66 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 67 | `    /*` | Comentario/documentacion interna del codigo o configuracion. |
+| 68 | `        Límites físicos.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 69 | `    */` | Comentario/documentacion interna del codigo o configuracion. |
+| 70 | `    bool minLimitEnabled;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 71 | `    uint minLimitPin;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 72 | `    bool minLimitActiveLow;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 73 | `    bool minLimitUsePullup;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 74 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 75 | `    bool maxLimitEnabled;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 76 | `    uint maxLimitPin;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 77 | `    bool maxLimitActiveLow;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 78 | `    bool maxLimitUsePullup;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 79 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 80 | `    /*` | Comentario/documentacion interna del codigo o configuracion. |
+| 81 | `        Límites por software.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 82 | `    */` | Comentario/documentacion interna del codigo o configuracion. |
+| 83 | `    bool softLimitsEnabled;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 84 | `    float softLimitMinMm;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 85 | `    float softLimitMaxMm;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 86 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 87 | `    /*` | Comentario/documentacion interna del codigo o configuracion. |
+| 88 | `        Asigna nombre al eje.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 89 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 90 | `        Parámetro:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 91 | `        name:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 92 | `        Texto con el nombre deseado del eje.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 93 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 94 | `        Reglas:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 95 | `        - Convierte minúsculas a MAYÚSCULAS.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 96 | `        - Ignora espacios, tabuladores y saltos de línea.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 97 | `        - Limita el nombre a AXIS_NAME_MAX_LENGTH - 1 caracteres.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 98 | `    */` | Comentario/documentacion interna del codigo o configuracion. |
+| 99 | `    bool setAxisName(const char* name) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 100 | `        if (name == nullptr) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 101 | `            return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 102 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 103 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 104 | `        uint writeIndex = 0;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 105 | `        bool hasValidCharacter = false;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 106 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 107 | `        for (` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 108 | `            uint readIndex = 0;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 109 | `            name[readIndex] != '\0' &&` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 110 | `            writeIndex < (AXIS_NAME_MAX_LENGTH - 1);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 111 | `            readIndex++` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 112 | `        ) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 113 | `            char currentChar = name[readIndex];` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 114 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 115 | `            if (` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 116 | `                currentChar == ' ' \|\|` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 117 | `                currentChar == '\t' \|\|` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 118 | `                currentChar == '\r' \|\|` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 119 | `                currentChar == '\n'` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 120 | `            ) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 121 | `                continue;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 122 | `            }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 123 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 124 | `            if (currentChar >= 'a' && currentChar <= 'z') {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 125 | `                currentChar =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 126 | `                    currentChar - ('a' - 'A');` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 127 | `            }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 128 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 129 | `            axisName[writeIndex] =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 130 | `                currentChar;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 131 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 132 | `            hasValidCharacter = true;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 133 | `            writeIndex++;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 134 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 135 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 136 | `        axisName[writeIndex] = '\0';` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 137 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 138 | `        return hasValidCharacter;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 139 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 140 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 141 | `    static StepperAxisConfig createBase() {` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 142 | `        StepperAxisConfig config = {};` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 143 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 144 | `        /*` | Comentario/documentacion interna del codigo o configuracion. |
+| 145 | `            Nombre por defecto.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 146 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 147 | `            Este nombre NO será aceptado por el controlador.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 148 | `            Es obligatorio reemplazarlo usando:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 149 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 150 | `            configX.setAxisName("X");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 151 | `        */` | Comentario/documentacion interna del codigo o configuracion. |
+| 152 | `        config.setAxisName("UNNAMED");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 153 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 154 | `        config.stepPin = PIN_NOT_USED;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 155 | `        config.dirPin = PIN_NOT_USED;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 156 | `        config.enablePin = PIN_NOT_USED;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 157 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 158 | `        config.enableActiveLow = true;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 159 | `        config.directionInvert = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 160 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 161 | `        config.motorStepsPerRev = 200;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 162 | `        config.microsteps = 1;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 163 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 164 | `        config.mechanismType = AxisMechanismType::BELT_DRIVE;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 165 | `        config.travelPerRevolutionMm = 1.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 166 | `        config.gearRatio = 1.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 167 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 168 | `        config.maxSpeedMmS = 10.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 169 | `        config.accelerationMmS2 = 50.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 170 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 171 | `        config.homeEnabled = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 172 | `        config.homePin = PIN_NOT_USED;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 173 | `        config.homeActiveLow = true;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 174 | `        config.homeUsePullup = true;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 175 | `        config.homeDirectionPositive = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 176 | `        config.homeSimulationEnabled = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 177 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 178 | `        config.homingSeekSpeedMmS = 10.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 179 | `        config.homingLatchSpeedMmS = 2.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 180 | `        config.homingBackoffMm = 3.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 181 | `        config.maxHomingTravelMm = 300.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 182 | `        config.homePositionMm = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 183 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 184 | `        config.minLimitEnabled = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 185 | `        config.minLimitPin = PIN_NOT_USED;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 186 | `        config.minLimitActiveLow = true;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 187 | `        config.minLimitUsePullup = true;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 188 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 189 | `        config.maxLimitEnabled = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 190 | `        config.maxLimitPin = PIN_NOT_USED;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 191 | `        config.maxLimitActiveLow = true;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 192 | `        config.maxLimitUsePullup = true;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 193 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 194 | `        config.softLimitsEnabled = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 195 | `        config.softLimitMinMm = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 196 | `        config.softLimitMaxMm = 100.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 197 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 198 | `        return config;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 199 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 200 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 201 | `    static StepperAxisConfig createLeadScrew(` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 202 | `        uint stepPin,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 203 | `        uint dirPin,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 204 | `        uint enablePin,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 205 | `        bool enableActiveLow,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 206 | `        bool directionInvert,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 207 | `        uint motorStepsPerRev,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 208 | `        uint microsteps,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 209 | `        float screwPitchMm,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 210 | `        float gearRatio,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 211 | `        float maxSpeedMmS,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 212 | `        float accelerationMmS2` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 213 | `    ) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 214 | `        StepperAxisConfig config = createBase();` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 215 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 216 | `        config.stepPin = stepPin;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 217 | `        config.dirPin = dirPin;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 218 | `        config.enablePin = enablePin;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 219 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 220 | `        config.enableActiveLow = enableActiveLow;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 221 | `        config.directionInvert = directionInvert;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 222 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 223 | `        config.motorStepsPerRev = motorStepsPerRev;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 224 | `        config.microsteps = microsteps;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 225 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 226 | `        config.mechanismType = AxisMechanismType::LEAD_SCREW;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 227 | `        config.travelPerRevolutionMm = screwPitchMm;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 228 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 229 | `        if (gearRatio <= 0.0f) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 230 | `            gearRatio = 1.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 231 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 232 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 233 | `        config.gearRatio = gearRatio;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 234 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 235 | `        config.maxSpeedMmS = maxSpeedMmS;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 236 | `        config.accelerationMmS2 = accelerationMmS2;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 237 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 238 | `        return config;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 239 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 240 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 241 | `    static StepperAxisConfig createBeltDrive(` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 242 | `        uint stepPin,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 243 | `        uint dirPin,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 244 | `        uint enablePin,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 245 | `        bool enableActiveLow,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 246 | `        bool directionInvert,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 247 | `        uint motorStepsPerRev,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 248 | `        uint microsteps,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 249 | `        float beltPitchMm,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 250 | `        uint pulleyTeeth,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 251 | `        float gearRatio,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 252 | `        float maxSpeedMmS,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 253 | `        float accelerationMmS2` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 254 | `    ) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 255 | `        StepperAxisConfig config = createBase();` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 256 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 257 | `        config.stepPin = stepPin;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 258 | `        config.dirPin = dirPin;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 259 | `        config.enablePin = enablePin;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 260 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 261 | `        config.enableActiveLow = enableActiveLow;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 262 | `        config.directionInvert = directionInvert;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 263 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 264 | `        config.motorStepsPerRev = motorStepsPerRev;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 265 | `        config.microsteps = microsteps;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 266 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 267 | `        config.mechanismType = AxisMechanismType::BELT_DRIVE;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 268 | `        config.travelPerRevolutionMm = beltPitchMm * (float)pulleyTeeth;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 269 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 270 | `        if (gearRatio <= 0.0f) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 271 | `            gearRatio = 1.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 272 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 273 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 274 | `        config.gearRatio = gearRatio;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 275 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 276 | `        config.maxSpeedMmS = maxSpeedMmS;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 277 | `        config.accelerationMmS2 = accelerationMmS2;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 278 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 279 | `        return config;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 280 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 281 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 282 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 283 | `#endif` | Directiva de preprocesador que protege o cierra la inclusion del header. |

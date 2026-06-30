@@ -1,484 +1,276 @@
-MANUAL DETALLADO: lib/objMotion/AdvanceMotionController.h
-=========================================================
+MANUAL ACTUALIZADO - lib/objMotion/AdvanceMotionController.h
+================================================================================
+Funcion inicial del archivo
+- Coordina ejes, HOME, validaciones, cola, perfil y ejecucion sincronizada.
 
-Finalidad: Este archivo funciona como controlador principal de movimiento coordinado; conecta ejes, planificador, perfil trapezoidal y motor PIO.
+Metodos, variables, secciones o instancias detectadas
+- L15: `class AdvanceMotionController {`
+- L17: `static const uint MAX_AXES = 8;`
+- L18: `static const uint MIN_AXES = 1;`
+- L43: `setHomeOrder({2, 0, 1});`
+- L46: `setHomeOrderByName({"Z", "X", "Y"});`
+- L57: `bool validateAxesStepPins();`
+- L68: `bool validateAxisNames() const;`
+- L104: `void prepareDirections(const MotionBlock& block);`
+- L105: `void prepareBresenham(const MotionBlock& block);`
+- L126: `void executeBresenhamStep();`
+- L128: `uint32_t calculateCurrentStepDelayUs();`
+- L130: `void loadNextPlannedMoveIfAvailable();`
+- L161: `void init();`
+- L163: `bool isValid() const;`
+- L165: `uint getAxisCount() const;`
+- L166: `const char* getAxisName(uint axisIndex) const;`
+- L168: `void printAxisMap() const;`
+- L169: `void printHomeOrder() const;`
+- L184: `void clearMotionQueue();`
+- L191: `bool prepareQueuedMoves();`
+- L193: `uint getRawQueuedMoveCount() const;`
+- L194: `uint getPlannedMoveCount() const;`
+- L196: `void update();`
+- L198: `bool isBusy() const;`
+- L200: `void stop();`
+- L201: `void emergencyStop();`
+- L220: `void clearHomeOrder();`
+- L222: `bool homeAxis(uint axisIndex);`
+- L223: `bool homeAll();`
 
-Ubicación y relación dentro del proyecto:
-- Ruta original: lib/objMotion/AdvanceMotionController.h
-- Manual generado: Manuals/AdvanceMotionController.h_manual.txt
-- Dependencias declaradas por include: initializer_list, pico/stdlib.h, AdvanceStepperAxis.h, StepperPioPulseEngine.h, MotionBlock.h, TrapezoidProfile.h, MotionPlanner.h
-- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
 
-Forma de uso o instanciación esperada:
-- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
-- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
-- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
-- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
-
-Descripción línea a línea:
-Línea 1: `#ifndef ADVANCE_MOTION_CONTROLLER_H`
-  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
-Línea 2: `#define ADVANCE_MOTION_CONTROLLER_H`
-  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
-Línea 3: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 4: `#include <initializer_list>`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 5: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 6: `#include "pico/stdlib.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 7: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 8: `#include "AdvanceStepperAxis.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 9: `#include "StepperPioPulseEngine.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 10: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 11: `#include "MotionBlock.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 12: `#include "TrapezoidProfile.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 13: `#include "MotionPlanner.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 14: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 15: `class AdvanceMotionController {`
-  Explicación: Declara una clase que agrupa estado interno y métodos relacionados.
-Línea 16: `private:`
-  Explicación: Define el nivel de acceso de los miembros declarados a continuación.
-Línea 17: `    static const uint MAX_AXES = 8;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 18: `    static const uint MIN_AXES = 1;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 19: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 20: `    AdvanceStepperAxis* axes[MAX_AXES];`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 21: `    uint axisCount;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 22: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 23: `    StepperPioPulseEngine* pulseEngine;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 24: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 25: `    MotionPlanner planner;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 26: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 27: `    MotionBlock currentBlock;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 28: `    TrapezoidProfileData currentProfile;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 29: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 30: `    bool validController;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 31: `    bool busy;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 32: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 33: `    uint32_t dominantStepCounter;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 34: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 35: `    int32_t bresenhamError[MAX_AXES];`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 36: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 37: `    absolute_time_t nextStepTime;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 38: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 39: `    /*`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 40: `        Orden configurable para HOME.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 41: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 42: `        Se puede configurar por índice:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 43: `        setHomeOrder({2, 0, 1});`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 44: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 45: `        O por nombre:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 46: `        setHomeOrderByName({"Z", "X", "Y"});`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 47: `    */`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 48: `    uint homeOrder[MAX_AXES];`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 49: `    uint homeOrderCount;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 50: `    bool homeOrderConfigured;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 51: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 52: `    bool loadAxes(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 53: `        AdvanceStepperAxis* axisList[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 54: `        uint numberOfAxes`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 55: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 56: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 57: `    bool validateAxesStepPins();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 58: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 59: `    bool textEquals(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 60: `        const char* firstText,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 61: `        const char* secondText`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 62: `    ) const;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 63: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 64: `    bool isReservedAxisName(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 65: `        const char* axisName`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 66: `    ) const;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 67: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 68: `    bool validateAxisNames() const;`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 69: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 70: `    bool normalizeAxisName(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 71: `        const char* inputName,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 72: `        char outputName[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 73: `        uint outputSize`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 74: `    ) const;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 75: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 76: `    bool findAxisIndexByName(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 77: `        const char* axisName,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 78: `        uint& outputAxisIndex`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 79: `    ) const;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 80: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 81: `    bool buildLinearBlockToArray(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 82: `        const float targetPositionsMm[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 83: `        uint targetCount,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 84: `        float requestedSpeedMmS,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 85: `        float entrySpeedMmS,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 86: `        float exitSpeedMmS,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 87: `        MotionBlock& block`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 88: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 89: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 90: `    bool buildLinearBlockTo(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 91: `        std::initializer_list<float> targetPositionsMm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 92: `        float requestedSpeedMmS,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 93: `        MotionBlock& block`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 94: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 95: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 96: `    bool startMotionBlock(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 97: `        const MotionBlock& block`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 98: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 99: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 100: `    bool startPlannedLinearMove(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 101: `        const PlannedLinearMove& plannedMove`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 102: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 103: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 104: `    void prepareDirections(const MotionBlock& block);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 105: `    void prepareBresenham(const MotionBlock& block);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 106: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 107: `    float calculateDistanceFromDeltas(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 108: `        const float deltas[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 109: `        uint count`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 110: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 111: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 112: `    float limitSpeedByAxisLimits(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 113: `        const MotionBlock& block,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 114: `        float requestedSpeedMmS`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 115: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 116: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 117: `    float limitSpeedByPulseEngine(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 118: `        const MotionBlock& block,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 119: `        float currentLimitedSpeed`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 120: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 121: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 122: `    float limitAccelerationByAxisLimits(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 123: `        const MotionBlock& block`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 124: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 125: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 126: `    void executeBresenhamStep();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 127: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 128: `    uint32_t calculateCurrentStepDelayUs();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 129: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 130: `    void loadNextPlannedMoveIfAvailable();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 131: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 132: `    uint32_t speedToStepDelayUs(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 133: `        uint axisIndex,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 134: `        float speedMmS`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 135: `    ) const;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 136: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 137: `    bool isHardwareLimitBlockingDirection(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 138: `        uint axisIndex,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 139: `        bool positiveDirection`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 140: `    ) const;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 141: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 142: `    bool stepAxisOnceBlocking(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 143: `        uint axisIndex,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 144: `        bool positiveDirection,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 145: `        uint32_t delayUs`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 146: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 147: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 148: `    bool moveAxisRelativeBlocking(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 149: `        uint axisIndex,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 150: `        float distanceMm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 151: `        float speedMmS`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 152: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 153: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 154: `public:`
-  Explicación: Define el nivel de acceso de los miembros declarados a continuación.
-Línea 155: `    AdvanceMotionController(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 156: `        AdvanceStepperAxis* axisList[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 157: `        uint numberOfAxes,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 158: `        StepperPioPulseEngine& selectedPulseEngine`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 159: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 160: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 161: `    void init();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 162: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 163: `    bool isValid() const;`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 164: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 165: `    uint getAxisCount() const;`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 166: `    const char* getAxisName(uint axisIndex) const;`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 167: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 168: `    void printAxisMap() const;`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 169: `    void printHomeOrder() const;`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 170: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 171: `    bool moveLinearTo(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 172: `        std::initializer_list<float> targetPositionsMm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 173: `        float requestedSpeedMmS`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 174: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 175: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 176: `    void configurePathSmoothing(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 177: `        bool enabled,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 178: `        float blendDistanceMm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 179: `        float blendSegmentLengthMm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 180: `        uint maxBlendSegments,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 181: `        float blendSpeedScale`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 182: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 183: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 184: `    void clearMotionQueue();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 185: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 186: `    bool queueLinearTo(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 187: `        std::initializer_list<float> targetPositionsMm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 188: `        float requestedSpeedMmS`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 189: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 190: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 191: `    bool prepareQueuedMoves();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 192: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 193: `    uint getRawQueuedMoveCount() const;`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 194: `    uint getPlannedMoveCount() const;`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 195: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 196: `    void update();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 197: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 198: `    bool isBusy() const;`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 199: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 200: `    void stop();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 201: `    void emergencyStop();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 202: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 203: `    void setCurrentPosition(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 204: `        std::initializer_list<float> currentPositionsMm`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 205: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 206: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 207: `    bool getCurrentPosition(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 208: `        float outputPositionsMm[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 209: `        uint outputCount`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 210: `    ) const;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 211: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 212: `    bool setHomeOrder(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 213: `        std::initializer_list<uint> orderedAxisIndexes`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 214: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 215: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 216: `    bool setHomeOrderByName(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 217: `        std::initializer_list<const char*> orderedAxisNames`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 218: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 219: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 220: `    void clearHomeOrder();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 221: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 222: `    bool homeAxis(uint axisIndex);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 223: `    bool homeAll();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 224: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 225: `    bool moveToSafePositionAfterHome(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 226: `        std::initializer_list<float> safePositionsMm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 227: `        float speedMmS`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 228: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 229: `};`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 230: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 231: `#endif`
-  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
-
-Resumen funcional:
-- lib/objMotion/AdvanceMotionController.h participa en el SDK aportando controlador principal de movimiento coordinado; conecta ejes, planificador, perfil trapezoidal y motor PIO.
-- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#ifndef ADVANCE_MOTION_CONTROLLER_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 2 | `#define ADVANCE_MOTION_CONTROLLER_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 3 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 4 | `#include <initializer_list>` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 5 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 6 | `#include "pico/stdlib.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 7 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 8 | `#include "AdvanceStepperAxis.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 9 | `#include "StepperPioPulseEngine.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 10 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 11 | `#include "MotionBlock.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 12 | `#include "TrapezoidProfile.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 13 | `#include "MotionPlanner.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 14 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 15 | `class AdvanceMotionController {` | Declara una clase y agrupa estado interno con metodos relacionados. |
+| 16 | `private:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 17 | `    static const uint MAX_AXES = 8;` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 18 | `    static const uint MIN_AXES = 1;` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 19 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 20 | `    AdvanceStepperAxis* axes[MAX_AXES];` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 21 | `    uint axisCount;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 22 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 23 | `    StepperPioPulseEngine* pulseEngine;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 24 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 25 | `    MotionPlanner planner;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 26 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 27 | `    MotionBlock currentBlock;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 28 | `    TrapezoidProfileData currentProfile;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 29 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 30 | `    bool validController;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 31 | `    bool busy;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 32 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 33 | `    uint32_t dominantStepCounter;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 34 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 35 | `    int32_t bresenhamError[MAX_AXES];` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 36 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 37 | `    absolute_time_t nextStepTime;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 38 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 39 | `    /*` | Comentario/documentacion interna del codigo o configuracion. |
+| 40 | `        Orden configurable para HOME.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 41 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 42 | `        Se puede configurar por índice:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 43 | `        setHomeOrder({2, 0, 1});` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 44 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 45 | `        O por nombre:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 46 | `        setHomeOrderByName({"Z", "X", "Y"});` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 47 | `    */` | Comentario/documentacion interna del codigo o configuracion. |
+| 48 | `    uint homeOrder[MAX_AXES];` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 49 | `    uint homeOrderCount;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 50 | `    bool homeOrderConfigured;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 51 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 52 | `    bool loadAxes(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 53 | `        AdvanceStepperAxis* axisList[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 54 | `        uint numberOfAxes` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 55 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 56 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 57 | `    bool validateAxesStepPins();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 58 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 59 | `    bool textEquals(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 60 | `        const char* firstText,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 61 | `        const char* secondText` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 62 | `    ) const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 63 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 64 | `    bool isReservedAxisName(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 65 | `        const char* axisName` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 66 | `    ) const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 67 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 68 | `    bool validateAxisNames() const;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 69 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 70 | `    bool normalizeAxisName(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 71 | `        const char* inputName,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 72 | `        char outputName[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 73 | `        uint outputSize` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 74 | `    ) const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 75 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 76 | `    bool findAxisIndexByName(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 77 | `        const char* axisName,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 78 | `        uint& outputAxisIndex` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 79 | `    ) const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 80 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 81 | `    bool buildLinearBlockToArray(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 82 | `        const float targetPositionsMm[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 83 | `        uint targetCount,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 84 | `        float requestedSpeedMmS,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 85 | `        float entrySpeedMmS,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 86 | `        float exitSpeedMmS,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 87 | `        MotionBlock& block` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 88 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 89 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 90 | `    bool buildLinearBlockTo(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 91 | `        std::initializer_list<float> targetPositionsMm,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 92 | `        float requestedSpeedMmS,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 93 | `        MotionBlock& block` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 94 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 95 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 96 | `    bool startMotionBlock(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 97 | `        const MotionBlock& block` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 98 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 99 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 100 | `    bool startPlannedLinearMove(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 101 | `        const PlannedLinearMove& plannedMove` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 102 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 103 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 104 | `    void prepareDirections(const MotionBlock& block);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 105 | `    void prepareBresenham(const MotionBlock& block);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 106 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 107 | `    float calculateDistanceFromDeltas(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 108 | `        const float deltas[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 109 | `        uint count` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 110 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 111 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 112 | `    float limitSpeedByAxisLimits(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 113 | `        const MotionBlock& block,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 114 | `        float requestedSpeedMmS` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 115 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 116 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 117 | `    float limitSpeedByPulseEngine(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 118 | `        const MotionBlock& block,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 119 | `        float currentLimitedSpeed` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 120 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 121 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 122 | `    float limitAccelerationByAxisLimits(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 123 | `        const MotionBlock& block` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 124 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 125 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 126 | `    void executeBresenhamStep();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 127 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 128 | `    uint32_t calculateCurrentStepDelayUs();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 129 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 130 | `    void loadNextPlannedMoveIfAvailable();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 131 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 132 | `    uint32_t speedToStepDelayUs(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 133 | `        uint axisIndex,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 134 | `        float speedMmS` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 135 | `    ) const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 136 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 137 | `    bool isHardwareLimitBlockingDirection(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 138 | `        uint axisIndex,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 139 | `        bool positiveDirection` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 140 | `    ) const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 141 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 142 | `    bool stepAxisOnceBlocking(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 143 | `        uint axisIndex,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 144 | `        bool positiveDirection,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 145 | `        uint32_t delayUs` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 146 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 147 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 148 | `    bool moveAxisRelativeBlocking(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 149 | `        uint axisIndex,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 150 | `        float distanceMm,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 151 | `        float speedMmS` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 152 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 153 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 154 | `public:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 155 | `    AdvanceMotionController(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 156 | `        AdvanceStepperAxis* axisList[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 157 | `        uint numberOfAxes,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 158 | `        StepperPioPulseEngine& selectedPulseEngine` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 159 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 160 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 161 | `    void init();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 162 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 163 | `    bool isValid() const;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 164 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 165 | `    uint getAxisCount() const;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 166 | `    const char* getAxisName(uint axisIndex) const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 167 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 168 | `    void printAxisMap() const;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 169 | `    void printHomeOrder() const;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 170 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 171 | `    bool moveLinearTo(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 172 | `        std::initializer_list<float> targetPositionsMm,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 173 | `        float requestedSpeedMmS` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 174 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 175 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 176 | `    void configurePathSmoothing(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 177 | `        bool enabled,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 178 | `        float blendDistanceMm,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 179 | `        float blendSegmentLengthMm,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 180 | `        uint maxBlendSegments,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 181 | `        float blendSpeedScale` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 182 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 183 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 184 | `    void clearMotionQueue();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 185 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 186 | `    bool queueLinearTo(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 187 | `        std::initializer_list<float> targetPositionsMm,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 188 | `        float requestedSpeedMmS` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 189 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 190 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 191 | `    bool prepareQueuedMoves();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 192 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 193 | `    uint getRawQueuedMoveCount() const;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 194 | `    uint getPlannedMoveCount() const;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 195 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 196 | `    void update();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 197 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 198 | `    bool isBusy() const;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 199 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 200 | `    void stop();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 201 | `    void emergencyStop();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 202 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 203 | `    void setCurrentPosition(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 204 | `        std::initializer_list<float> currentPositionsMm` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 205 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 206 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 207 | `    bool getCurrentPosition(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 208 | `        float outputPositionsMm[],` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 209 | `        uint outputCount` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 210 | `    ) const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 211 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 212 | `    bool setHomeOrder(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 213 | `        std::initializer_list<uint> orderedAxisIndexes` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 214 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 215 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 216 | `    bool setHomeOrderByName(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 217 | `        std::initializer_list<const char*> orderedAxisNames` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 218 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 219 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 220 | `    void clearHomeOrder();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 221 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 222 | `    bool homeAxis(uint axisIndex);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 223 | `    bool homeAll();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 224 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 225 | `    bool moveToSafePositionAfterHome(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 226 | `        std::initializer_list<float> safePositionsMm,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 227 | `        float speedMmS` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 228 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 229 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 230 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 231 | `#endif` | Directiva de preprocesador que protege o cierra la inclusion del header. |

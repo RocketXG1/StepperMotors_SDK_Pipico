@@ -1,412 +1,246 @@
-MANUAL DETALLADO: lib/objMotion/MotionPlanner.h
-===============================================
+MANUAL ACTUALIZADO - lib/objMotion/MotionPlanner.h
+================================================================================
+Funcion inicial del archivo
+- Administra cola de movimientos y suavizado geometrico de esquinas.
 
-Finalidad: Este archivo funciona como planificador de movimientos lineales y suavizado geométrico entre segmentos.
+Metodos, variables, secciones o instancias detectadas
+- L8: `struct MotionPlannerConfig {`
+- L22: `struct RawLinearMove {`
+- L23: `static const uint MAX_AXES = 8;`
+- L30: `void reset() {`
+- L31: `axisCount = 0;`
+- L32: `requestedSpeedMmS = 0.0f;`
+- L33: `valid = false;`
+- L35: `for (uint i = 0; i < MAX_AXES; i++) {`
+- L36: `targetPositionMm[i] = 0.0f;`
+- L41: `struct PlannedLinearMove {`
+- L42: `static const uint MAX_AXES = 8;`
+- L55: `void reset() {`
+- L56: `axisCount = 0;`
+- L58: `requestedSpeedMmS = 0.0f;`
+- L59: `entrySpeedMmS = 0.0f;`
+- L60: `exitSpeedMmS = 0.0f;`
+- L62: `isBlendSegment = false;`
+- L63: `valid = false;`
+- L65: `for (uint i = 0; i < MAX_AXES; i++) {`
+- L66: `targetPositionMm[i] = 0.0f;`
+- L71: `class MotionPlanner {`
+- L73: `static const uint MAX_AXES = 8;`
+- L75: `static const uint RAW_QUEUE_SIZE = 24;`
+- L76: `static const uint PLANNED_QUEUE_SIZE = 128;`
+- L100: `void assignPlannedSpeeds();`
+- L102: `void clearPlannedQueueOnly();`
+- L156: `MotionPlanner();`
+- L168: `void setBlendEnabled(bool enabled);`
+- L182: `bool buildPlannedQueue();`
+- L184: `bool popPlannedMove(PlannedLinearMove& outputMove);`
+- L186: `bool hasPlannedMoves() const;`
+- L187: `bool hasRawMoves() const;`
+- L189: `uint getRawMoveCount() const;`
+- L190: `uint getPlannedMoveCount() const;`
+- L192: `void clear();`
 
-Ubicación y relación dentro del proyecto:
-- Ruta original: lib/objMotion/MotionPlanner.h
-- Manual generado: Manuals/MotionPlanner.h_manual.txt
-- Dependencias declaradas por include: initializer_list, pico/stdlib.h
-- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
 
-Forma de uso o instanciación esperada:
-- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
-- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
-- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
-- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
-
-Descripción línea a línea:
-Línea 1: `#ifndef MOTION_PLANNER_H`
-  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
-Línea 2: `#define MOTION_PLANNER_H`
-  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
-Línea 3: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 4: `#include <initializer_list>`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 5: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 6: `#include "pico/stdlib.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 7: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 8: `struct MotionPlannerConfig {`
-  Explicación: Declara una estructura de datos para transportar configuración, estado o resultados.
-Línea 9: `    bool blendEnabled;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 10: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 11: `    float blendDistanceMm;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 12: `    float blendSegmentLengthMm;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 13: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 14: `    uint maxBlendSegments;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 15: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 16: `    float maxTrimRatio;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 17: `    float minMovementMm;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 18: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 19: `    float blendSpeedScale;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 20: `};`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 21: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 22: `struct RawLinearMove {`
-  Explicación: Declara una estructura de datos para transportar configuración, estado o resultados.
-Línea 23: `    static const uint MAX_AXES = 8;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 24: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 25: `    uint axisCount;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 26: `    float targetPositionMm[MAX_AXES];`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 27: `    float requestedSpeedMmS;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 28: `    bool valid;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 29: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 30: `    void reset() {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 31: `        axisCount = 0;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 32: `        requestedSpeedMmS = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 33: `        valid = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 34: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 35: `        for (uint i = 0; i < MAX_AXES; i++) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 36: `            targetPositionMm[i] = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 37: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 38: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 39: `};`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 40: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 41: `struct PlannedLinearMove {`
-  Explicación: Declara una estructura de datos para transportar configuración, estado o resultados.
-Línea 42: `    static const uint MAX_AXES = 8;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 43: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 44: `    uint axisCount;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 45: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 46: `    float targetPositionMm[MAX_AXES];`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 47: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 48: `    float requestedSpeedMmS;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 49: `    float entrySpeedMmS;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 50: `    float exitSpeedMmS;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 51: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 52: `    bool isBlendSegment;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 53: `    bool valid;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 54: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 55: `    void reset() {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 56: `        axisCount = 0;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 57: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 58: `        requestedSpeedMmS = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 59: `        entrySpeedMmS = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 60: `        exitSpeedMmS = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 61: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 62: `        isBlendSegment = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 63: `        valid = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 64: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 65: `        for (uint i = 0; i < MAX_AXES; i++) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 66: `            targetPositionMm[i] = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 67: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 68: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 69: `};`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 70: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 71: `class MotionPlanner {`
-  Explicación: Declara una clase que agrupa estado interno y métodos relacionados.
-Línea 72: `private:`
-  Explicación: Define el nivel de acceso de los miembros declarados a continuación.
-Línea 73: `    static const uint MAX_AXES = 8;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 74: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 75: `    static const uint RAW_QUEUE_SIZE = 24;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 76: `    static const uint PLANNED_QUEUE_SIZE = 128;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 77: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 78: `    uint axisCount;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 79: `    bool configured;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 80: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 81: `    MotionPlannerConfig config;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 82: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 83: `    RawLinearMove rawQueue[RAW_QUEUE_SIZE];`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 84: `    uint rawCount;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 85: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 86: `    PlannedLinearMove plannedQueue[PLANNED_QUEUE_SIZE];`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 87: `    uint plannedHead;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 88: `    uint plannedTail;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 89: `    uint plannedCount;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 90: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 91: `    float startPositionMm[MAX_AXES];`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 92: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 93: `    bool addPlannedMove(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 94: `        const float targetPositionMm[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 95: `        uint targetAxisCount,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 96: `        float requestedSpeedMmS,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 97: `        bool isBlendSegment`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 98: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 99: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 100: `    void assignPlannedSpeeds();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 101: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 102: `    void clearPlannedQueueOnly();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 103: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 104: `    float distanceBetween(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 105: `        const float a[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 106: `        const float b[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 107: `        uint count`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 108: `    ) const;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 109: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 110: `    bool normalizeVector(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 111: `        const float start[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 112: `        const float end[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 113: `        float outputUnit[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 114: `        uint count,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 115: `        float& outputDistance`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 116: `    ) const;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 117: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 118: `    float dotProduct(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 119: `        const float a[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 120: `        const float b[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 121: `        uint count`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 122: `    ) const;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 123: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 124: `    void copyPoint(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 125: `        float destination[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 126: `        const float source[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 127: `        uint count`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 128: `    ) const;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 129: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 130: `    void calculatePointBeforeCorner(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 131: `        const float corner[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 132: `        const float unitIn[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 133: `        float trimDistance,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 134: `        float outputPoint[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 135: `        uint count`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 136: `    ) const;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 137: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 138: `    void calculatePointAfterCorner(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 139: `        const float corner[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 140: `        const float unitOut[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 141: `        float trimDistance,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 142: `        float outputPoint[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 143: `        uint count`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 144: `    ) const;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 145: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 146: `    void calculateBezierPoint(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 147: `        const float start[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 148: `        const float control[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 149: `        const float end[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 150: `        float t,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 151: `        float outputPoint[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 152: `        uint count`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 153: `    ) const;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 154: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 155: `public:`
-  Explicación: Define el nivel de acceso de los miembros declarados a continuación.
-Línea 156: `    MotionPlanner();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 157: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 158: `    void configure(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 159: `        uint numberOfAxes,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 160: `        const MotionPlannerConfig& plannerConfig`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 161: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 162: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 163: `    void setStartPosition(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 164: `        const float currentPositionMm[],`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 165: `        uint numberOfAxes`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 166: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 167: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 168: `    void setBlendEnabled(bool enabled);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 169: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 170: `    void setBlendParameters(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 171: `        float blendDistanceMm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 172: `        float blendSegmentLengthMm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 173: `        uint maxBlendSegments,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 174: `        float blendSpeedScale`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 175: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 176: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 177: `    bool pushLinearTo(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 178: `        std::initializer_list<float> targetPositionsMm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 179: `        float requestedSpeedMmS`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 180: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 181: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 182: `    bool buildPlannedQueue();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 183: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 184: `    bool popPlannedMove(PlannedLinearMove& outputMove);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 185: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 186: `    bool hasPlannedMoves() const;`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 187: `    bool hasRawMoves() const;`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 188: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 189: `    uint getRawMoveCount() const;`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 190: `    uint getPlannedMoveCount() const;`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 191: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 192: `    void clear();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 193: `};`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 194: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 195: `#endif`
-  Explicación: Directiva de preprocesador que protege o cierra la inclusión múltiple del encabezado.
-
-Resumen funcional:
-- lib/objMotion/MotionPlanner.h participa en el SDK aportando planificador de movimientos lineales y suavizado geométrico entre segmentos.
-- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#ifndef MOTION_PLANNER_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 2 | `#define MOTION_PLANNER_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 3 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 4 | `#include <initializer_list>` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 5 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 6 | `#include "pico/stdlib.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 7 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 8 | `struct MotionPlannerConfig {` | Declara una estructura de datos para agrupar variables relacionadas. |
+| 9 | `    bool blendEnabled;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 10 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 11 | `    float blendDistanceMm;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 12 | `    float blendSegmentLengthMm;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 13 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 14 | `    uint maxBlendSegments;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 15 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 16 | `    float maxTrimRatio;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 17 | `    float minMovementMm;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 18 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 19 | `    float blendSpeedScale;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 20 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 21 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 22 | `struct RawLinearMove {` | Declara una estructura de datos para agrupar variables relacionadas. |
+| 23 | `    static const uint MAX_AXES = 8;` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 24 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 25 | `    uint axisCount;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 26 | `    float targetPositionMm[MAX_AXES];` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 27 | `    float requestedSpeedMmS;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 28 | `    bool valid;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 29 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 30 | `    void reset() {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 31 | `        axisCount = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 32 | `        requestedSpeedMmS = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 33 | `        valid = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 34 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 35 | `        for (uint i = 0; i < MAX_AXES; i++) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 36 | `            targetPositionMm[i] = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 37 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 38 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 39 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 40 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 41 | `struct PlannedLinearMove {` | Declara una estructura de datos para agrupar variables relacionadas. |
+| 42 | `    static const uint MAX_AXES = 8;` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 43 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 44 | `    uint axisCount;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 45 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 46 | `    float targetPositionMm[MAX_AXES];` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 47 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 48 | `    float requestedSpeedMmS;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 49 | `    float entrySpeedMmS;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 50 | `    float exitSpeedMmS;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 51 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 52 | `    bool isBlendSegment;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 53 | `    bool valid;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 54 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 55 | `    void reset() {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 56 | `        axisCount = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 57 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 58 | `        requestedSpeedMmS = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 59 | `        entrySpeedMmS = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 60 | `        exitSpeedMmS = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 61 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 62 | `        isBlendSegment = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 63 | `        valid = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 64 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 65 | `        for (uint i = 0; i < MAX_AXES; i++) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 66 | `            targetPositionMm[i] = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 67 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 68 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 69 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 70 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 71 | `class MotionPlanner {` | Declara una clase y agrupa estado interno con metodos relacionados. |
+| 72 | `private:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 73 | `    static const uint MAX_AXES = 8;` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 74 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 75 | `    static const uint RAW_QUEUE_SIZE = 24;` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 76 | `    static const uint PLANNED_QUEUE_SIZE = 128;` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 77 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 78 | `    uint axisCount;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 79 | `    bool configured;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 80 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 81 | `    MotionPlannerConfig config;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 82 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 83 | `    RawLinearMove rawQueue[RAW_QUEUE_SIZE];` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 84 | `    uint rawCount;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 85 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 86 | `    PlannedLinearMove plannedQueue[PLANNED_QUEUE_SIZE];` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 87 | `    uint plannedHead;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 88 | `    uint plannedTail;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 89 | `    uint plannedCount;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 90 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 91 | `    float startPositionMm[MAX_AXES];` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 92 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 93 | `    bool addPlannedMove(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 94 | `        const float targetPositionMm[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 95 | `        uint targetAxisCount,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 96 | `        float requestedSpeedMmS,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 97 | `        bool isBlendSegment` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 98 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 99 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 100 | `    void assignPlannedSpeeds();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 101 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 102 | `    void clearPlannedQueueOnly();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 103 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 104 | `    float distanceBetween(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 105 | `        const float a[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 106 | `        const float b[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 107 | `        uint count` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 108 | `    ) const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 109 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 110 | `    bool normalizeVector(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 111 | `        const float start[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 112 | `        const float end[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 113 | `        float outputUnit[],` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 114 | `        uint count,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 115 | `        float& outputDistance` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 116 | `    ) const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 117 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 118 | `    float dotProduct(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 119 | `        const float a[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 120 | `        const float b[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 121 | `        uint count` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 122 | `    ) const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 123 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 124 | `    void copyPoint(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 125 | `        float destination[],` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 126 | `        const float source[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 127 | `        uint count` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 128 | `    ) const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 129 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 130 | `    void calculatePointBeforeCorner(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 131 | `        const float corner[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 132 | `        const float unitIn[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 133 | `        float trimDistance,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 134 | `        float outputPoint[],` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 135 | `        uint count` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 136 | `    ) const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 137 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 138 | `    void calculatePointAfterCorner(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 139 | `        const float corner[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 140 | `        const float unitOut[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 141 | `        float trimDistance,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 142 | `        float outputPoint[],` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 143 | `        uint count` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 144 | `    ) const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 145 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 146 | `    void calculateBezierPoint(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 147 | `        const float start[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 148 | `        const float control[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 149 | `        const float end[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 150 | `        float t,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 151 | `        float outputPoint[],` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 152 | `        uint count` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 153 | `    ) const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 154 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 155 | `public:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 156 | `    MotionPlanner();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 157 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 158 | `    void configure(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 159 | `        uint numberOfAxes,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 160 | `        const MotionPlannerConfig& plannerConfig` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 161 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 162 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 163 | `    void setStartPosition(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 164 | `        const float currentPositionMm[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 165 | `        uint numberOfAxes` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 166 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 167 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 168 | `    void setBlendEnabled(bool enabled);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 169 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 170 | `    void setBlendParameters(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 171 | `        float blendDistanceMm,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 172 | `        float blendSegmentLengthMm,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 173 | `        uint maxBlendSegments,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 174 | `        float blendSpeedScale` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 175 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 176 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 177 | `    bool pushLinearTo(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 178 | `        std::initializer_list<float> targetPositionsMm,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 179 | `        float requestedSpeedMmS` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 180 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 181 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 182 | `    bool buildPlannedQueue();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 183 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 184 | `    bool popPlannedMove(PlannedLinearMove& outputMove);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 185 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 186 | `    bool hasPlannedMoves() const;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 187 | `    bool hasRawMoves() const;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 188 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 189 | `    uint getRawMoveCount() const;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 190 | `    uint getPlannedMoveCount() const;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 191 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 192 | `    void clear();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 193 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 194 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 195 | `#endif` | Directiva de preprocesador que protege o cierra la inclusion del header. |

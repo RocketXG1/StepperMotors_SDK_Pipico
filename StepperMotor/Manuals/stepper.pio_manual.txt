@@ -1,208 +1,125 @@
-MANUAL DETALLADO: src/srcStepper/stepper.pio
-============================================
+MANUAL ACTUALIZADO - src/srcStepper/stepper.pio
+================================================================================
+Funcion inicial del archivo
+- Genera pulsos STEP para hasta 8 ejes usando PIO y mascaras de bits.
 
-Finalidad: Este archivo funciona como programa PIO que emite pulsos simultáneos en un grupo de pines STEP.
+Metodos, variables, secciones o instancias detectadas
+- L7: `; bit 0 = STEP eje 0`
+- L8: `; bit 1 = STEP eje 1`
+- L9: `; bit 2 = STEP eje 2`
+- L11: `; bit 7 = STEP eje 7`
+- L33: `const uint step_pin_count = 8;`
+- L35: `for (uint i = 0; i < step_pin_count; i++) {`
+- L36: `uint pin = first_step_pin + i;`
+- L38: `gpio_init(pin);`
+- L39: `gpio_set_dir(pin, GPIO_OUT);`
+- L40: `gpio_put(pin, 0);`
+- L42: `pio_gpio_init(pio, pin);`
+- L53: `pio_sm_config c =`
+- L54: `stepper_multi_program_get_default_config(offset);`
+- L74: `float div =`
+- L75: `(float)clock_get_hz(clk_sys) /`
+- L78: `sm_config_set_clkdiv(&c, div);`
 
-Ubicación y relación dentro del proyecto:
-- Ruta original: src/srcStepper/stepper.pio
-- Manual generado: Manuals/stepper.pio_manual.txt
-- Dependencias declaradas por include: hardware/clocks.h
-- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
 
-Forma de uso o instanciación esperada:
-- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
-- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
-- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
-- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
-
-Descripción línea a línea:
-Línea 1: `.program stepper_multi`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 2: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 3: `; Controla 8 pines STEP consecutivos.`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 4: `;`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 5: `; Cada dato recibido por FIFO es una máscara:`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 6: `;`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 7: `; bit 0 = STEP eje 0`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 8: `; bit 1 = STEP eje 1`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 9: `; bit 2 = STEP eje 2`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 10: `; ...`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 11: `; bit 7 = STEP eje 7`
-  Explicación: Comentario documental que explica intención, configuración o comportamiento sin generar código ejecutable.
-Línea 12: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 13: `.define public STEP_HIGH_DELAY 2`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 14: `.define public STEP_LOW_DELAY 2`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 15: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 16: `.wrap_target`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 17: `    pull block`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 18: `    out pins, 8 [STEP_HIGH_DELAY]`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 19: `    mov pins, null [STEP_LOW_DELAY]`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 20: `.wrap`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 21: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 22: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 23: `% c-sdk {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 24: `#include "hardware/clocks.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 25: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 26: `static inline void stepper_multi_program_init(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 27: `    PIO pio,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 28: `    uint sm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 29: `    uint offset,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 30: `    uint first_step_pin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 31: `    float pio_frequency_hz`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 32: `) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 33: `    const uint step_pin_count = 8;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 34: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 35: `    for (uint i = 0; i < step_pin_count; i++) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 36: `        uint pin = first_step_pin + i;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 37: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 38: `        gpio_init(pin);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 39: `        gpio_set_dir(pin, GPIO_OUT);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 40: `        gpio_put(pin, 0);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 41: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 42: `        pio_gpio_init(pio, pin);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 43: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 44: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 45: `    pio_sm_set_consecutive_pindirs(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 46: `        pio,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 47: `        sm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 48: `        first_step_pin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 49: `        step_pin_count,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 50: `        true`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 51: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 52: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 53: `    pio_sm_config c =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 54: `        stepper_multi_program_get_default_config(offset);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 55: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 56: `    sm_config_set_out_pins(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 57: `        &c,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 58: `        first_step_pin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 59: `        step_pin_count`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 60: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 61: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 62: `    sm_config_set_out_shift(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 63: `        &c,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 64: `        true,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 65: `        false,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 66: `        32`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 67: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 68: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 69: `    sm_config_set_fifo_join(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 70: `        &c,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 71: `        PIO_FIFO_JOIN_TX`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 72: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 73: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 74: `    float div =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 75: `        (float)clock_get_hz(clk_sys) /`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 76: `        pio_frequency_hz;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 77: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 78: `    sm_config_set_clkdiv(&c, div);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 79: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 80: `    pio_sm_init(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 81: `        pio,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 82: `        sm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 83: `        offset,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 84: `        &c`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 85: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 86: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 87: `    pio_sm_set_enabled(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 88: `        pio,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 89: `        sm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 90: `        true`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 91: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 92: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 93: `%}`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-
-Resumen funcional:
-- src/srcStepper/stepper.pio participa en el SDK aportando programa PIO que emite pulsos simultáneos en un grupo de pines STEP.
-- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `.program stepper_multi` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 2 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 3 | `; Controla 8 pines STEP consecutivos.` | Comentario/documentacion interna del codigo o configuracion. |
+| 4 | `;` | Comentario/documentacion interna del codigo o configuracion. |
+| 5 | `; Cada dato recibido por FIFO es una máscara:` | Comentario/documentacion interna del codigo o configuracion. |
+| 6 | `;` | Comentario/documentacion interna del codigo o configuracion. |
+| 7 | `; bit 0 = STEP eje 0` | Comentario/documentacion interna del codigo o configuracion. |
+| 8 | `; bit 1 = STEP eje 1` | Comentario/documentacion interna del codigo o configuracion. |
+| 9 | `; bit 2 = STEP eje 2` | Comentario/documentacion interna del codigo o configuracion. |
+| 10 | `; ...` | Comentario/documentacion interna del codigo o configuracion. |
+| 11 | `; bit 7 = STEP eje 7` | Comentario/documentacion interna del codigo o configuracion. |
+| 12 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 13 | `.define public STEP_HIGH_DELAY 2` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 14 | `.define public STEP_LOW_DELAY 2` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 15 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 16 | `.wrap_target` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 17 | `    pull block` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 18 | `    out pins, 8 [STEP_HIGH_DELAY]` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 19 | `    mov pins, null [STEP_LOW_DELAY]` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 20 | `.wrap` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 21 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 22 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 23 | `% c-sdk {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 24 | `#include "hardware/clocks.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 25 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 26 | `static inline void stepper_multi_program_init(` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 27 | `    PIO pio,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 28 | `    uint sm,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 29 | `    uint offset,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 30 | `    uint first_step_pin,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 31 | `    float pio_frequency_hz` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 32 | `) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 33 | `    const uint step_pin_count = 8;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 34 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 35 | `    for (uint i = 0; i < step_pin_count; i++) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 36 | `        uint pin = first_step_pin + i;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 37 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 38 | `        gpio_init(pin);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 39 | `        gpio_set_dir(pin, GPIO_OUT);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 40 | `        gpio_put(pin, 0);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 41 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 42 | `        pio_gpio_init(pio, pin);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 43 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 44 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 45 | `    pio_sm_set_consecutive_pindirs(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 46 | `        pio,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 47 | `        sm,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 48 | `        first_step_pin,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 49 | `        step_pin_count,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 50 | `        true` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 51 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 52 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 53 | `    pio_sm_config c =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 54 | `        stepper_multi_program_get_default_config(offset);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 55 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 56 | `    sm_config_set_out_pins(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 57 | `        &c,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 58 | `        first_step_pin,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 59 | `        step_pin_count` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 60 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 61 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 62 | `    sm_config_set_out_shift(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 63 | `        &c,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 64 | `        true,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 65 | `        false,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 66 | `        32` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 67 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 68 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 69 | `    sm_config_set_fifo_join(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 70 | `        &c,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 71 | `        PIO_FIFO_JOIN_TX` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 72 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 73 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 74 | `    float div =` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 75 | `        (float)clock_get_hz(clk_sys) /` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 76 | `        pio_frequency_hz;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 77 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 78 | `    sm_config_set_clkdiv(&c, div);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 79 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 80 | `    pio_sm_init(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 81 | `        pio,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 82 | `        sm,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 83 | `        offset,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 84 | `        &c` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 85 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 86 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 87 | `    pio_sm_set_enabled(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 88 | `        pio,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 89 | `        sm,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 90 | `        true` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 91 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 92 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 93 | `%}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |

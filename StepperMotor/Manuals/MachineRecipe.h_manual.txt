@@ -1,0 +1,99 @@
+MANUAL ACTUALIZADO - lib/objConfig/MachineRecipe.h
+================================================================================
+Funcion inicial del archivo
+- Documenta, parsea o proporciona recetas de maquina para configurar ejes desde texto/microSD.
+
+Metodos, variables, secciones o instancias detectadas
+- L7: `static const uint MACHINE_RECIPE_MAX_AXES = 8;`
+- L8: `static const uint MACHINE_RECIPE_MAX_HOME_ORDER = 8;`
+- L9: `static const uint MACHINE_RECIPE_MAX_TEXT_LENGTH = 8192;`
+- L11: `struct MachineRecipeAxis {`
+- L18: `struct MachineRecipe {`
+- L25: `void reset();`
+- L28: `class MachineRecipeParser {`
+- L32: `void clearError();`
+- L33: `bool fail(const char* message);`
+- L34: `static void trim(char* text);`
+- L35: `static bool textEqualsIgnoreCase(const char* left, const char* right);`
+- L36: `static bool parseBool(const char* text, bool& outputValue);`
+- L37: `static bool parseUint(const char* text, uint& outputValue);`
+- L38: `static bool parseFloat(const char* text, float& outputValue);`
+- L53: `bool validateRecipe(const MachineRecipe& recipe);`
+- L56: `MachineRecipeParser();`
+- L63: `const char* getLastError() const;`
+
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
+
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#ifndef MACHINE_RECIPE_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 2 | `#define MACHINE_RECIPE_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 3 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 4 | `#include "pico/stdlib.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 5 | `#include "StepperAxisConfig.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 6 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 7 | `static const uint MACHINE_RECIPE_MAX_AXES = 8;` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 8 | `static const uint MACHINE_RECIPE_MAX_HOME_ORDER = 8;` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 9 | `static const uint MACHINE_RECIPE_MAX_TEXT_LENGTH = 8192;` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 10 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 11 | `struct MachineRecipeAxis {` | Declara una estructura de datos para agrupar variables relacionadas. |
+| 12 | `    bool enabled;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 13 | `    StepperAxisConfig config;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 14 | `    float beltPitchMm;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 15 | `    uint pulleyTeeth;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 16 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 17 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 18 | `struct MachineRecipe {` | Declara una estructura de datos para agrupar variables relacionadas. |
+| 19 | `    int version;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 20 | `    MachineRecipeAxis axes[MACHINE_RECIPE_MAX_AXES];` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 21 | `    uint axisCount;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 22 | `    char homeOrder[MACHINE_RECIPE_MAX_HOME_ORDER][StepperAxisConfig::AXIS_NAME_MAX_LENGTH];` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 23 | `    uint homeOrderCount;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 24 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 25 | `    void reset();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 26 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 27 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 28 | `class MachineRecipeParser {` | Declara una clase y agrupa estado interno con metodos relacionados. |
+| 29 | `private:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 30 | `    char lastError[160];` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 31 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 32 | `    void clearError();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 33 | `    bool fail(const char* message);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 34 | `    static void trim(char* text);` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 35 | `    static bool textEqualsIgnoreCase(const char* left, const char* right);` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 36 | `    static bool parseBool(const char* text, bool& outputValue);` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 37 | `    static bool parseUint(const char* text, uint& outputValue);` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 38 | `    static bool parseFloat(const char* text, float& outputValue);` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 39 | `    static bool parseAxisSectionName(` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 40 | `        const char* sectionName,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 41 | `        char outputAxisName[],` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 42 | `        uint outputSize` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 43 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 44 | `    static void parseHomeOrder(` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 45 | `        const char* value,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 46 | `        MachineRecipe& recipe` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 47 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 48 | `    bool applyAxisValue(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 49 | `        MachineRecipeAxis& axis,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 50 | `        const char* key,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 51 | `        const char* value` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 52 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 53 | `    bool validateRecipe(const MachineRecipe& recipe);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 54 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 55 | `public:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 56 | `    MachineRecipeParser();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 57 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 58 | `    bool parse(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 59 | `        const char* recipeText,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 60 | `        MachineRecipe& outputRecipe` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 61 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 62 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 63 | `    const char* getLastError() const;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 64 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 65 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 66 | `#endif` | Directiva de preprocesador que protege o cierra la inclusion del header. |

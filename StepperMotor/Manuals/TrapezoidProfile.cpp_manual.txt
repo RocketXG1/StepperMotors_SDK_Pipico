@@ -1,396 +1,272 @@
-MANUAL DETALLADO: src/srcMotion/TrapezoidProfile.cpp
-====================================================
+MANUAL ACTUALIZADO - src/srcMotion/TrapezoidProfile.cpp
+================================================================================
+Funcion inicial del archivo
+- Calcula perfiles trapezoidales/triangulares de velocidad para los movimientos.
 
-Finalidad: Este archivo funciona como cálculo del perfil de aceleración, crucero y desaceleración.
+Metodos, variables, secciones o instancias detectadas
+- L15: `profile.accelerationSteps = 0;`
+- L16: `profile.cruiseSteps = 0;`
+- L17: `profile.decelerationSteps = 0;`
+- L19: `profile.entrySpeedMmS = entrySpeedMmS;`
+- L20: `profile.exitSpeedMmS = exitSpeedMmS;`
+- L22: `profile.requestedSpeedMmS = requestedSpeedMmS;`
+- L23: `profile.reachableSpeedMmS = 0.0f;`
+- L24: `profile.accelerationMmS2 = accelerationMmS2;`
+- L26: `profile.accelerationDistanceMm = 0.0f;`
+- L27: `profile.cruiseDistanceMm = 0.0f;`
+- L28: `profile.decelerationDistanceMm = 0.0f;`
+- L30: `profile.isTriangular = false;`
+- L31: `profile.valid = false;`
+- L33: `if (totalSteps == 0) {`
+- L37: `if (distanceMm <= 0.0f) {`
+- L41: `if (requestedSpeedMmS <= 0.0f) {`
+- L45: `if (accelerationMmS2 <= 0.0f) {`
+- L50: `profile.entrySpeedMmS = 0.0f;`
+- L54: `profile.exitSpeedMmS = 0.0f;`
+- L58: `profile.entrySpeedMmS = requestedSpeedMmS;`
+- L62: `profile.exitSpeedMmS = requestedSpeedMmS;`
+- L65: `float requestedSquared =`
+- L68: `float entrySquared =`
+- L71: `float exitSquared =`
+- L74: `float accelerationDistance =`
+- L75: `(requestedSquared - entrySquared) /`
+- L76: `(2.0f * accelerationMmS2);`
+- L78: `float decelerationDistance =`
+- L79: `(requestedSquared - exitSquared) /`
+- L80: `(2.0f * accelerationMmS2);`
+- L83: `accelerationDistance = 0.0f;`
+- L87: `decelerationDistance = 0.0f;`
+- L90: `float totalAccelDecelDistance =`
+- L93: `if (totalAccelDecelDistance <= distanceMm) {`
+- L94: `profile.isTriangular = false;`
+- L96: `profile.reachableSpeedMmS = requestedSpeedMmS;`
+- L98: `profile.accelerationDistanceMm = accelerationDistance;`
+- L99: `profile.decelerationDistanceMm = decelerationDistance;`
+- L101: `profile.cruiseDistanceMm =`
+- L106: `profile.isTriangular = true;`
+- L108: `float peakSquared =`
+- L117: `peakSquared = entrySquared;`
+- L121: `peakSquared = exitSquared;`
+- L124: `profile.reachableSpeedMmS =`
+- L125: `sqrtf(peakSquared);`
+- L128: `profile.reachableSpeedMmS = requestedSpeedMmS;`
+- L131: `float peakSquaredFinal =`
+- L135: `profile.accelerationDistanceMm =`
+- L136: `(peakSquaredFinal - entrySquared) /`
+- L137: `(2.0f * accelerationMmS2);`
+- L139: `profile.decelerationDistanceMm =`
+- L140: `(peakSquaredFinal - exitSquared) /`
+- L141: `(2.0f * accelerationMmS2);`
+- L144: `profile.accelerationDistanceMm = 0.0f;`
+- L148: `profile.decelerationDistanceMm = 0.0f;`
+- L151: `profile.cruiseDistanceMm = 0.0f;`
+- L154: `profile.accelerationSteps =`
+- L155: `(uint32_t)(`
+- L156: `(profile.accelerationDistanceMm / distanceMm) *`
+- L157: `(float)totalSteps`
+- L160: `profile.decelerationSteps =`
+- L161: `(uint32_t)(`
+- L162: `(profile.decelerationDistanceMm / distanceMm) *`
+- L163: `(float)totalSteps`
+- L171: `profile.accelerationSteps = totalSteps / 2;`
+- L173: `profile.decelerationSteps =`
+- L176: `profile.cruiseSteps = 0;`
+- L178: `profile.cruiseSteps =`
+- L184: `profile.valid = true;`
 
-Ubicación y relación dentro del proyecto:
-- Ruta original: src/srcMotion/TrapezoidProfile.cpp
-- Manual generado: Manuals/TrapezoidProfile.cpp_manual.txt
-- Dependencias declaradas por include: TrapezoidProfile.h, math.h
-- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
 
-Forma de uso o instanciación esperada:
-- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
-- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
-- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
-- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
-
-Descripción línea a línea:
-Línea 1: `#include "TrapezoidProfile.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 2: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 3: `#include <math.h>`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 4: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 5: `TrapezoidProfileData TrapezoidProfile::calculate(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 6: `    uint32_t totalSteps,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 7: `    float distanceMm,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 8: `    float requestedSpeedMmS,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 9: `    float accelerationMmS2,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 10: `    float entrySpeedMmS,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 11: `    float exitSpeedMmS`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 12: `) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 13: `    TrapezoidProfileData profile;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 14: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 15: `    profile.accelerationSteps = 0;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 16: `    profile.cruiseSteps = 0;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 17: `    profile.decelerationSteps = 0;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 18: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 19: `    profile.entrySpeedMmS = entrySpeedMmS;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 20: `    profile.exitSpeedMmS = exitSpeedMmS;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 21: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 22: `    profile.requestedSpeedMmS = requestedSpeedMmS;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 23: `    profile.reachableSpeedMmS = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 24: `    profile.accelerationMmS2 = accelerationMmS2;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 25: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 26: `    profile.accelerationDistanceMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 27: `    profile.cruiseDistanceMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 28: `    profile.decelerationDistanceMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 29: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 30: `    profile.isTriangular = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 31: `    profile.valid = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 32: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 33: `    if (totalSteps == 0) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 34: `        return profile;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 35: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 36: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 37: `    if (distanceMm <= 0.0f) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 38: `        return profile;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 39: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 40: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 41: `    if (requestedSpeedMmS <= 0.0f) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 42: `        return profile;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 43: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 44: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 45: `    if (accelerationMmS2 <= 0.0f) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 46: `        return profile;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 47: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 48: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 49: `    if (profile.entrySpeedMmS < 0.0f) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 50: `        profile.entrySpeedMmS = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 51: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 52: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 53: `    if (profile.exitSpeedMmS < 0.0f) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 54: `        profile.exitSpeedMmS = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 55: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 56: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 57: `    if (profile.entrySpeedMmS > requestedSpeedMmS) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 58: `        profile.entrySpeedMmS = requestedSpeedMmS;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 59: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 60: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 61: `    if (profile.exitSpeedMmS > requestedSpeedMmS) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 62: `        profile.exitSpeedMmS = requestedSpeedMmS;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 63: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 64: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 65: `    float requestedSquared =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 66: `        requestedSpeedMmS * requestedSpeedMmS;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 67: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 68: `    float entrySquared =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 69: `        profile.entrySpeedMmS * profile.entrySpeedMmS;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 70: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 71: `    float exitSquared =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 72: `        profile.exitSpeedMmS * profile.exitSpeedMmS;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 73: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 74: `    float accelerationDistance =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 75: `        (requestedSquared - entrySquared) /`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 76: `        (2.0f * accelerationMmS2);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 77: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 78: `    float decelerationDistance =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 79: `        (requestedSquared - exitSquared) /`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 80: `        (2.0f * accelerationMmS2);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 81: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 82: `    if (accelerationDistance < 0.0f) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 83: `        accelerationDistance = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 84: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 85: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 86: `    if (decelerationDistance < 0.0f) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 87: `        decelerationDistance = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 88: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 89: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 90: `    float totalAccelDecelDistance =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 91: `        accelerationDistance + decelerationDistance;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 92: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 93: `    if (totalAccelDecelDistance <= distanceMm) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 94: `        profile.isTriangular = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 95: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 96: `        profile.reachableSpeedMmS = requestedSpeedMmS;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 97: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 98: `        profile.accelerationDistanceMm = accelerationDistance;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 99: `        profile.decelerationDistanceMm = decelerationDistance;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 100: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 101: `        profile.cruiseDistanceMm =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 102: `            distanceMm -`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 103: `            accelerationDistance -`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 104: `            decelerationDistance;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 105: `    } else {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 106: `        profile.isTriangular = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 107: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 108: `        float peakSquared =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 109: `            (`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 110: `                2.0f * accelerationMmS2 * distanceMm +`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 111: `                entrySquared +`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 112: `                exitSquared`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 113: `            ) /`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 114: `            2.0f;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 115: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 116: `        if (peakSquared < entrySquared) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 117: `            peakSquared = entrySquared;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 118: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 119: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 120: `        if (peakSquared < exitSquared) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 121: `            peakSquared = exitSquared;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 122: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 123: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 124: `        profile.reachableSpeedMmS =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 125: `            sqrtf(peakSquared);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 126: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 127: `        if (profile.reachableSpeedMmS > requestedSpeedMmS) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 128: `            profile.reachableSpeedMmS = requestedSpeedMmS;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 129: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 130: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 131: `        float peakSquaredFinal =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 132: `            profile.reachableSpeedMmS *`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 133: `            profile.reachableSpeedMmS;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 134: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 135: `        profile.accelerationDistanceMm =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 136: `            (peakSquaredFinal - entrySquared) /`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 137: `            (2.0f * accelerationMmS2);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 138: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 139: `        profile.decelerationDistanceMm =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 140: `            (peakSquaredFinal - exitSquared) /`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 141: `            (2.0f * accelerationMmS2);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 142: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 143: `        if (profile.accelerationDistanceMm < 0.0f) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 144: `            profile.accelerationDistanceMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 145: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 146: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 147: `        if (profile.decelerationDistanceMm < 0.0f) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 148: `            profile.decelerationDistanceMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 149: `        }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 150: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 151: `        profile.cruiseDistanceMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 152: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 153: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 154: `    profile.accelerationSteps =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 155: `        (uint32_t)(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 156: `            (profile.accelerationDistanceMm / distanceMm) *`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 157: `            (float)totalSteps`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 158: `        );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 159: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 160: `    profile.decelerationSteps =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 161: `        (uint32_t)(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 162: `            (profile.decelerationDistanceMm / distanceMm) *`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 163: `            (float)totalSteps`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 164: `        );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 165: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 166: `    if (`
-  Explicación: Evalúa una condición para decidir si se ejecuta el bloque siguiente.
-Línea 167: `        profile.accelerationSteps +`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 168: `        profile.decelerationSteps >`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 169: `        totalSteps`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 170: `    ) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 171: `        profile.accelerationSteps = totalSteps / 2;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 172: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 173: `        profile.decelerationSteps =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 174: `            totalSteps - profile.accelerationSteps;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 175: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 176: `        profile.cruiseSteps = 0;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 177: `    } else {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 178: `        profile.cruiseSteps =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 179: `            totalSteps -`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 180: `            profile.accelerationSteps -`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 181: `            profile.decelerationSteps;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 182: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 183: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 184: `    profile.valid = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 185: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 186: `    return profile;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 187: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-
-Resumen funcional:
-- src/srcMotion/TrapezoidProfile.cpp participa en el SDK aportando cálculo del perfil de aceleración, crucero y desaceleración.
-- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#include "TrapezoidProfile.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 2 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 3 | `#include <math.h>` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 4 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 5 | `TrapezoidProfileData TrapezoidProfile::calculate(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 6 | `    uint32_t totalSteps,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 7 | `    float distanceMm,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 8 | `    float requestedSpeedMmS,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 9 | `    float accelerationMmS2,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 10 | `    float entrySpeedMmS,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 11 | `    float exitSpeedMmS` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 12 | `) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 13 | `    TrapezoidProfileData profile;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 14 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 15 | `    profile.accelerationSteps = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 16 | `    profile.cruiseSteps = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 17 | `    profile.decelerationSteps = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 18 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 19 | `    profile.entrySpeedMmS = entrySpeedMmS;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 20 | `    profile.exitSpeedMmS = exitSpeedMmS;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 21 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 22 | `    profile.requestedSpeedMmS = requestedSpeedMmS;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 23 | `    profile.reachableSpeedMmS = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 24 | `    profile.accelerationMmS2 = accelerationMmS2;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 25 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 26 | `    profile.accelerationDistanceMm = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 27 | `    profile.cruiseDistanceMm = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 28 | `    profile.decelerationDistanceMm = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 29 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 30 | `    profile.isTriangular = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 31 | `    profile.valid = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 32 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 33 | `    if (totalSteps == 0) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 34 | `        return profile;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 35 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 36 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 37 | `    if (distanceMm <= 0.0f) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 38 | `        return profile;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 39 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 40 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 41 | `    if (requestedSpeedMmS <= 0.0f) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 42 | `        return profile;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 43 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 44 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 45 | `    if (accelerationMmS2 <= 0.0f) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 46 | `        return profile;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 47 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 48 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 49 | `    if (profile.entrySpeedMmS < 0.0f) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 50 | `        profile.entrySpeedMmS = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 51 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 52 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 53 | `    if (profile.exitSpeedMmS < 0.0f) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 54 | `        profile.exitSpeedMmS = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 55 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 56 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 57 | `    if (profile.entrySpeedMmS > requestedSpeedMmS) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 58 | `        profile.entrySpeedMmS = requestedSpeedMmS;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 59 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 60 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 61 | `    if (profile.exitSpeedMmS > requestedSpeedMmS) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 62 | `        profile.exitSpeedMmS = requestedSpeedMmS;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 63 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 64 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 65 | `    float requestedSquared =` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 66 | `        requestedSpeedMmS * requestedSpeedMmS;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 67 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 68 | `    float entrySquared =` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 69 | `        profile.entrySpeedMmS * profile.entrySpeedMmS;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 70 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 71 | `    float exitSquared =` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 72 | `        profile.exitSpeedMmS * profile.exitSpeedMmS;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 73 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 74 | `    float accelerationDistance =` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 75 | `        (requestedSquared - entrySquared) /` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 76 | `        (2.0f * accelerationMmS2);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 77 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 78 | `    float decelerationDistance =` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 79 | `        (requestedSquared - exitSquared) /` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 80 | `        (2.0f * accelerationMmS2);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 81 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 82 | `    if (accelerationDistance < 0.0f) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 83 | `        accelerationDistance = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 84 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 85 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 86 | `    if (decelerationDistance < 0.0f) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 87 | `        decelerationDistance = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 88 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 89 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 90 | `    float totalAccelDecelDistance =` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 91 | `        accelerationDistance + decelerationDistance;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 92 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 93 | `    if (totalAccelDecelDistance <= distanceMm) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 94 | `        profile.isTriangular = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 95 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 96 | `        profile.reachableSpeedMmS = requestedSpeedMmS;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 97 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 98 | `        profile.accelerationDistanceMm = accelerationDistance;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 99 | `        profile.decelerationDistanceMm = decelerationDistance;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 100 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 101 | `        profile.cruiseDistanceMm =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 102 | `            distanceMm -` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 103 | `            accelerationDistance -` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 104 | `            decelerationDistance;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 105 | `    } else {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 106 | `        profile.isTriangular = true;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 107 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 108 | `        float peakSquared =` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 109 | `            (` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 110 | `                2.0f * accelerationMmS2 * distanceMm +` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 111 | `                entrySquared +` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 112 | `                exitSquared` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 113 | `            ) /` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 114 | `            2.0f;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 115 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 116 | `        if (peakSquared < entrySquared) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 117 | `            peakSquared = entrySquared;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 118 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 119 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 120 | `        if (peakSquared < exitSquared) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 121 | `            peakSquared = exitSquared;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 122 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 123 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 124 | `        profile.reachableSpeedMmS =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 125 | `            sqrtf(peakSquared);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 126 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 127 | `        if (profile.reachableSpeedMmS > requestedSpeedMmS) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 128 | `            profile.reachableSpeedMmS = requestedSpeedMmS;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 129 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 130 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 131 | `        float peakSquaredFinal =` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 132 | `            profile.reachableSpeedMmS *` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 133 | `            profile.reachableSpeedMmS;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 134 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 135 | `        profile.accelerationDistanceMm =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 136 | `            (peakSquaredFinal - entrySquared) /` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 137 | `            (2.0f * accelerationMmS2);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 138 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 139 | `        profile.decelerationDistanceMm =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 140 | `            (peakSquaredFinal - exitSquared) /` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 141 | `            (2.0f * accelerationMmS2);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 142 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 143 | `        if (profile.accelerationDistanceMm < 0.0f) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 144 | `            profile.accelerationDistanceMm = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 145 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 146 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 147 | `        if (profile.decelerationDistanceMm < 0.0f) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 148 | `            profile.decelerationDistanceMm = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 149 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 150 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 151 | `        profile.cruiseDistanceMm = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 152 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 153 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 154 | `    profile.accelerationSteps =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 155 | `        (uint32_t)(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 156 | `            (profile.accelerationDistanceMm / distanceMm) *` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 157 | `            (float)totalSteps` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 158 | `        );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 159 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 160 | `    profile.decelerationSteps =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 161 | `        (uint32_t)(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 162 | `            (profile.decelerationDistanceMm / distanceMm) *` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 163 | `            (float)totalSteps` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 164 | `        );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 165 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 166 | `    if (` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 167 | `        profile.accelerationSteps +` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 168 | `        profile.decelerationSteps >` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 169 | `        totalSteps` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 170 | `    ) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 171 | `        profile.accelerationSteps = totalSteps / 2;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 172 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 173 | `        profile.decelerationSteps =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 174 | `            totalSteps - profile.accelerationSteps;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 175 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 176 | `        profile.cruiseSteps = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 177 | `    } else {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 178 | `        profile.cruiseSteps =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 179 | `            totalSteps -` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 180 | `            profile.accelerationSteps -` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 181 | `            profile.decelerationSteps;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 182 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 183 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 184 | `    profile.valid = true;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 185 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 186 | `    return profile;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 187 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |

@@ -1,0 +1,86 @@
+Ejemplo1 - Referencia para usar 1 solo motor/eje
+=================================================
+
+Funcion del archivo
+-------------------
+Este manual muestra como usar el SDK cuando la maquina solo tiene 1 motor. No modifica el codigo fuente: sirve como referencia para adaptar main.cpp o una receta de microSD.
+
+Instancias necesarias
+--------------------
+- StepperPioPulseEngine pulseEngine(pio0, 0, 2, 10): genera pulsos STEP; el eje usara GP2 como STEP.
+- MachineRecipe recipe: estructura que puede venir de config/recipes/Ejemplo1_axes.txt.
+- MotionSystem motionSystem: contiene el arreglo de ejes y el controlador inicializados desde la receta.
+- AdvanceMotionController& motion: referencia principal para HOME, movimientos directos y cola.
+
+Quien llama a quien
+------------------
+1. main.cpp llama loadRecipeFromMicroSdOrFallback(recipe) o el parser de MachineRecipe.
+2. initializeMotionSystem(recipe, pulseEngine, motionSystem) crea AdvanceStepperAxis y AdvanceMotionController.
+3. executeRecipeHomeSequence(motion, recipe) llama motion.setHomeOrderByName(...) y motion.homeAll().
+4. El usuario llama motion.moveLinearTo({X}, velocidad) o motion.queueLinearTo({X}, velocidad).
+5. motion.update() debe ejecutarse hasta terminar cada movimiento o continuamente en el while principal.
+
+Ejemplo de flujo con 10 movimientos posibles
+-------------------------------------------
+```cpp
+StepperPioPulseEngine pulseEngine(pio0, 0, 2, 10);
+MachineRecipe recipe;
+MachineRecipeParser parser;
+parser.parse(DEFAULT_MACHINE_RECIPE_TEXT, recipe); // O leer config/recipes/Ejemplo1_axes.txt desde microSD.
+
+static MotionSystem motionSystem;
+initializeMotionSystem(recipe, pulseEngine, motionSystem);
+AdvanceMotionController& motion = *motionSystem.motion;
+
+executeRecipeHomeSequence(motion, recipe);
+
+motion.moveToSafePositionAfterHome({0.0f}, 20.0f);
+while (motion.isBusy()) { motion.update(); }
+
+// Movimiento 1: posicion absoluta 10 mm.
+motion.moveLinearTo({10.0f}, 25.0f);
+while (motion.isBusy()) { motion.update(); }
+
+// Movimiento 2.
+motion.moveLinearTo({20.0f}, 25.0f);
+while (motion.isBusy()) { motion.update(); }
+
+// Movimiento 3.
+motion.moveLinearTo({5.0f}, 20.0f);
+while (motion.isBusy()) { motion.update(); }
+
+// Movimiento 4.
+motion.moveLinearTo({50.0f}, 40.0f);
+while (motion.isBusy()) { motion.update(); }
+
+// Movimiento 5.
+motion.moveLinearTo({75.0f}, 45.0f);
+while (motion.isBusy()) { motion.update(); }
+
+// Movimiento 6.
+motion.moveLinearTo({30.0f}, 30.0f);
+while (motion.isBusy()) { motion.update(); }
+
+// Movimiento 7.
+motion.moveLinearTo({100.0f}, 50.0f);
+while (motion.isBusy()) { motion.update(); }
+
+// Movimiento 8.
+motion.moveLinearTo({0.0f}, 35.0f);
+while (motion.isBusy()) { motion.update(); }
+
+// Movimiento 9.
+motion.moveLinearTo({150.0f}, 60.0f);
+while (motion.isBusy()) { motion.update(); }
+
+// Movimiento 10.
+motion.moveLinearTo({25.0f}, 25.0f);
+while (motion.isBusy()) { motion.update(); }
+```
+
+Notas linea por linea del patron de movimiento
+----------------------------------------------
+- `motion.moveLinearTo({valor}, velocidad);` manda un target absoluto para el unico eje. La lista debe tener exactamente 1 valor porque axisCount=1.
+- `while (motion.isBusy())` espera a que el bloque termine.
+- `motion.update();` genera los pasos pendientes mediante el controlador y el motor PIO.
+- En 1 eje puede usarse cola, pero el suavizado de esquinas no genera curvas porque requiere minimo 2 ejes geometricos.

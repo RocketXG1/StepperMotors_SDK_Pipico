@@ -1,0 +1,53 @@
+MANUAL ACTUALIZADO - prgProject/MotionSystemInitializer.h
+================================================================================
+Funcion inicial del archivo
+- Archivo de soporte/documentacion del proyecto.
+
+Metodos, variables, secciones o instancias detectadas
+- L9: `enum class MotionSystemStatus {`
+- L14: `struct MotionSystem {`
+- L15: `alignas(AdvanceStepperAxis) unsigned char axisStorage[MACHINE_RECIPE_MAX_AXES][sizeof(AdvanceStepperAxis)];`
+- L16: `AdvanceStepperAxis* axes[MACHINE_RECIPE_MAX_AXES] = {};`
+- L18: `alignas(AdvanceMotionController) unsigned char motionStorage[sizeof(AdvanceMotionController)];`
+- L19: `AdvanceMotionController* motion = nullptr;`
+- L22: `const char* getMotionSystemStatusMessage(MotionSystemStatus status);`
+
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
+
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#ifndef MOTION_SYSTEM_INITIALIZER_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 2 | `#define MOTION_SYSTEM_INITIALIZER_H` | Directiva de preprocesador que protege o cierra la inclusion del header. |
+| 3 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 4 | `#include "AdvanceMotionController.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 5 | `#include "AdvanceStepperAxis.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 6 | `#include "MachineRecipe.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 7 | `#include "StepperPioPulseEngine.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 8 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 9 | `enum class MotionSystemStatus {` | Declara un conjunto de constantes con nombre. |
+| 10 | `    Ok,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 11 | `    InvalidAxisCount` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 12 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 13 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 14 | `struct MotionSystem {` | Declara una estructura de datos para agrupar variables relacionadas. |
+| 15 | `    alignas(AdvanceStepperAxis) unsigned char axisStorage[MACHINE_RECIPE_MAX_AXES][sizeof(AdvanceStepperAxis)];` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 16 | `    AdvanceStepperAxis* axes[MACHINE_RECIPE_MAX_AXES] = {};` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 17 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 18 | `    alignas(AdvanceMotionController) unsigned char motionStorage[sizeof(AdvanceMotionController)];` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 19 | `    AdvanceMotionController* motion = nullptr;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 20 | `};` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 21 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 22 | `const char* getMotionSystemStatusMessage(MotionSystemStatus status);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 23 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 24 | `MotionSystemStatus initializeMotionSystem(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 25 | `    const MachineRecipe& recipe,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 26 | `    StepperPioPulseEngine& pulseEngine,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 27 | `    MotionSystem& system` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 28 | `);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 29 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 30 | `#endif` | Directiva de preprocesador que protege o cierra la inclusion del header. |

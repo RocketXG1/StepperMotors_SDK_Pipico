@@ -1,648 +1,203 @@
-MANUAL DETALLADO Y ACTUALIZADO: StepperMotor/prgProject/main.cpp
-=================================================================
-
-Objetivo del archivo
---------------------
-`main.cpp` es el punto de entrada de la aplicación de ejemplo para Raspberry Pi Pico/Pico SDK. La versión actual ya no define manualmente las configuraciones de ejes dentro del código principal; ahora carga una receta de máquina desde una microSD y, si esa carga falla o la receta es inválida, usa una receta embebida por defecto como respaldo seguro de demostración. Después crea el motor de pulsos PIO, construye dinámicamente los objetos de eje sobre memoria estática, crea el controlador de movimiento, ejecuta HOME, realiza movimientos lineales y prepara una cola de movimientos con suavizado de trayectoria.
-
-Dependencias incluidas
-----------------------
-- `pico/stdlib.h`: funciones base del Pico SDK (`stdio_init_all`, `sleep_ms`, `tight_loop_contents`, tipos `uint`, etc.).
-- `<new>`: habilita placement new para construir objetos `AdvanceStepperAxis` dentro de un buffer estático preasignado.
-- `<stdio.h>`: habilita `printf` para mensajes por consola/USB serial.
-- `StepperAxisConfig.h`: estructura de configuración eléctrica, cinemática, límites y HOME de cada eje.
-- `AdvanceStepperAxis.h`: clase que representa un eje físico y convierte posiciones entre mm y pasos.
-- `StepperPioPulseEngine.h`: clase que genera pulsos STEP usando PIO.
-- `AdvanceMotionController.h`: controlador que coordina varios ejes, planifica y ejecuta movimientos.
-- `HomeSequenceFunctionBlock.h`: bloque funcional que valida, configura y ejecuta la secuencia HOME.
-- `MachineRecipe.h`: estructuras `MachineRecipe`, `MachineRecipeAxis` y parser de recetas.
-- `SdRecipeStorage.h`: acceso a microSD y ruta por defecto `DEFAULT_RECIPE_PATH`.
-- `DefaultRecipe.h`: texto de receta embebida `DEFAULT_MACHINE_RECIPE_TEXT` usado como fallback.
-
-Objetos principales instanciados
---------------------------------
-1. `MachineRecipe recipe`: contenedor de configuración parseada: versión, ejes, cantidad de ejes y orden HOME.
-2. `SdRecipeStorage storage`: lector de microSD configurado con `SdSpiConfig::createDefault()`.
-3. `MachineRecipeParser parser`: interpreta el texto de receta y rellena `MachineRecipe`.
-4. `StepperPioPulseEngine pulseEngine`: genera pulsos STEP para hasta 8 pines consecutivos desde GPIO 2.
-5. `axisStorage`: matriz de bytes alineada para alojar objetos `AdvanceStepperAxis` sin usar heap dinámico tradicional.
-6. `AdvanceStepperAxis* axes[]`: arreglo de punteros a los ejes construidos.
-7. `AdvanceMotionController motion`: controlador multieje que recibe los punteros de ejes, la cantidad real de ejes y el motor PIO.
-
-Flujo general de ejecución
---------------------------
-1. Inicializa la consola serial y espera 2 segundos.
-2. Carga la receta desde `0:/config/axes.txt` en microSD.
-3. Si no puede leer microSD, o si el texto leído no parsea correctamente, intenta usar la receta embebida.
-4. Si tampoco puede parsear la receta embebida, queda detenido en un bucle infinito seguro.
-5. Configura el generador PIO de pulsos STEP.
-6. Construye un objeto `AdvanceStepperAxis` por cada eje descrito en la receta.
-7. Crea el `AdvanceMotionController`.
-8. Ejecuta HOME según el orden especificado en la receta; si no hay orden, usa el orden por defecto del controlador.
-9. Mueve a una posición segura posterior al HOME.
-10. Ejecuta un movimiento lineal directo.
-11. Habilita suavizado de trayectoria y prepara una cola de tres movimientos lineales.
-12. Entra en un bucle infinito llamando `motion.update()` para mantener vivo el planificador/ejecutor.
-
-Métodos y funciones definidos o usados
---------------------------------------
-- `loadRecipeFromMicroSdOrFallback(MachineRecipe& recipe)`: función estática local que llena `recipe` desde microSD o desde receta embebida.
-- `executeRecipeHomeSequence(AdvanceMotionController& motion, const MachineRecipe& recipe)`: adapta el arreglo `homeOrder` de la receta a la interfaz de `executeHomeSequence`, que acepta `std::initializer_list`.
-- `stdio_init_all()`: inicializa la E/S estándar del Pico SDK.
-- `sleep_ms(2000)`: pausa el arranque para permitir abrir el monitor serial.
-- `SdSpiConfig::createDefault()`: devuelve la configuración SPI por defecto para la microSD.
-- `storage.begin()`: inicializa el subsistema de microSD.
-- `storage.readTextFile(...)`: lee el archivo de receta a un buffer de texto.
-- `storage.end()`: libera/cierra el acceso a microSD.
-- `parser.parse(...)`: valida y transforma texto de receta en `MachineRecipe`.
-- `parser.getLastError()` y `storage.getLastError()`: devuelven diagnóstico textual del último error.
-- `executeHomeSequence(...)`: bloque funcional de HOME por nombres de ejes.
-- `motion.init()`: inicializa hardware/controlador cuando se usa el HOME por defecto.
-- `motion.homeAll()`: ejecuta HOME de todos los ejes.
-- `motion.moveToSafePositionAfterHome(...)`: movimiento seguro posterior a HOME.
-- `motion.moveLinearTo(...)`: movimiento lineal directo a una posición objetivo.
-- `motion.configurePathSmoothing(...)`: configura mezcla/suavizado entre segmentos.
-- `motion.clearMotionQueue()`: limpia la cola de movimientos.
-- `motion.queueLinearTo(...)`: añade movimientos lineales a la cola.
-- `motion.prepareQueuedMoves()`: planifica y valida la cola antes de ejecutarla.
-- `motion.isBusy()` y `motion.update()`: consultan/avanzan la ejecución de movimiento.
-- `motion.emergencyStop()`: detención de emergencia ante error de movimiento o planificación.
-- `tight_loop_contents()`: función del Pico SDK para bucles intencionalmente vacíos.
-
-Explicación línea a línea
--------------------------
-Línea 1: `#include "pico/stdlib.h"`
-  Importa la biblioteca estándar del Pico SDK. Es necesaria para `stdio_init_all`, `sleep_ms`, `tight_loop_contents`, `uint`, `pio0` indirectamente por dependencias y tipos de tiempo/GPIO usados por las clases.
-
-Línea 2: `#include <new>`
-  Importa las utilidades C++ de construcción de objetos. En este archivo se usa para placement new: `new (axisStorage[axisIndex]) AdvanceStepperAxis(...)`.
-
-Línea 3: `#include <stdio.h>`
-  Importa `printf`, usado para reportar estado, advertencias y errores por consola serial.
-
-Línea 4: línea en blanco.
-  Separa includes del SDK/C++ de los includes propios del proyecto para mejorar legibilidad.
-
-Línea 5: `#include "StepperAxisConfig.h"`
-  Incluye el tipo de configuración de cada eje. Aunque `main.cpp` ya no crea configuraciones manuales, las recetas contienen `StepperAxisConfig` dentro de cada `MachineRecipeAxis`.
-
-Línea 6: `#include "AdvanceStepperAxis.h"`
-  Incluye la clase que se instancia para cada eje físico definido en la receta.
-
-Línea 7: `#include "StepperPioPulseEngine.h"`
-  Incluye la clase responsable de emitir pulsos STEP mediante PIO.
-
-Línea 8: `#include "AdvanceMotionController.h"`
-  Incluye el controlador que coordina todos los ejes y ejecuta movimientos lineales, HOME, cola y suavizado.
-
-Línea 9: `#include "HomeSequenceFunctionBlock.h"`
-  Incluye `executeHomeSequence` y códigos `HOME_SEQUENCE_*`, usados para la secuencia HOME configurable.
-
-Línea 10: `#include "MachineRecipe.h"`
-  Incluye `MachineRecipe`, límites máximos (`MACHINE_RECIPE_MAX_AXES`, `MACHINE_RECIPE_MAX_TEXT_LENGTH`) y `MachineRecipeParser`.
-
-Línea 11: `#include "SdRecipeStorage.h"`
-  Incluye `SdRecipeStorage`, `SdSpiConfig` y `DEFAULT_RECIPE_PATH` para leer la receta desde microSD.
-
-Línea 12: `#include "DefaultRecipe.h"`
-  Incluye la receta embebida `DEFAULT_MACHINE_RECIPE_TEXT`, usada cuando la microSD no está disponible o falla la receta externa.
-
-Línea 13: línea en blanco.
-  Separa includes de la primera función local.
-
-Línea 14: `static bool loadRecipeFromMicroSdOrFallback(MachineRecipe& recipe) {`
-  Define una función auxiliar con enlace interno (`static`) que intenta cargar una receta en el parámetro de salida `recipe`. Devuelve `true` si obtiene una receta válida y `false` si tanto microSD como fallback fallan.
-
-Línea 15: `static char recipeText[MACHINE_RECIPE_MAX_TEXT_LENGTH];`
-  Declara un buffer estático de texto para leer la receta. Al ser `static`, evita consumir pila con un arreglo de hasta 8192 bytes y mantiene almacenamiento de duración global dentro de la función.
-
-Línea 16: línea en blanco.
-  Separa el buffer de los objetos de soporte.
-
-Línea 17: `SdRecipeStorage storage(SdSpiConfig::createDefault());`
-  Instancia `storage` usando la configuración SPI por defecto. Este objeto encapsula inicialización, lectura y cierre del acceso a microSD.
-
-Línea 18: `MachineRecipeParser parser;`
-  Instancia el parser que validará el texto de receta y rellenará la estructura `MachineRecipe`.
-
-Línea 19: línea en blanco.
-  Separa instanciación de objetos del primer mensaje de estado.
-
-Línea 20: `printf("Loading machine recipe from microSD: %s\n", DEFAULT_RECIPE_PATH);`
-  Informa por consola que se intentará leer la receta desde la ruta por defecto, normalmente `0:/config/axes.txt`.
-
-Línea 21: línea en blanco.
-  Separa el mensaje del bloque condicional de lectura.
-
-Línea 22: `if (storage.begin() && storage.readTextFile(DEFAULT_RECIPE_PATH, recipeText, sizeof(recipeText))) {`
-  Inicializa la microSD y, solo si eso fue exitoso, lee el archivo de receta en `recipeText`. El operador `&&` evita intentar leer si `begin()` falla.
-
-Línea 23: `storage.end();`
-  Cierra/libera la microSD después de una lectura exitosa. Se hace antes de parsear porque el texto ya está en RAM.
-
-Línea 24: línea en blanco.
-  Separa cierre de almacenamiento del parseo.
-
-Línea 25: `if (parser.parse(recipeText, recipe)) {`
-  Intenta convertir el texto leído en una `MachineRecipe` válida. Si parsea correctamente, `recipe` queda lista para crear ejes y HOME.
-
-Línea 26: `printf("Recipe loaded from microSD. Axes: %u\n", recipe.axisCount);`
-  Reporta que se cargó la receta externa e imprime cuántos ejes activos contiene.
-
-Línea 27: `return true;`
-  Sale de la función indicando éxito. El programa usará la configuración proveniente de la microSD.
-
-Línea 28: `}`
-  Cierra el `if` de parseo exitoso.
-
-Línea 29: línea en blanco.
-  Separa el camino exitoso del mensaje de error.
-
-Línea 30: `printf("ERROR: microSD recipe is invalid: %s\n", parser.getLastError());`
-  Si el archivo se leyó pero no es válido, informa el error del parser. Después continuará hacia el fallback embebido.
-
-Línea 31: `} else {`
-  Abre el caso alterno: la microSD no inicializó o no se pudo leer el archivo.
-
-Línea 32: `printf("WARNING: microSD recipe not available: %s\n", storage.getLastError());`
-  Reporta advertencia con el último error del almacenamiento. No detiene el sistema todavía porque existe fallback.
-
-Línea 33: `storage.end();`
-  Garantiza cierre/liberación del almacenamiento también cuando falló `begin()` o `readTextFile()`.
-
-Línea 34: `}`
-  Cierra el bloque alterno de error/advertencia de microSD.
-
-Línea 35: línea en blanco.
-  Separa el intento microSD del intento fallback.
-
-Línea 36: `printf("Using embedded default recipe as a safe demonstration fallback.\n");`
-  Informa que se usará la receta embebida para mantener una demostración segura aun sin microSD válida.
-
-Línea 37: línea en blanco.
-  Separa mensaje del parseo fallback.
-
-Línea 38: `if (!parser.parse(DEFAULT_MACHINE_RECIPE_TEXT, recipe)) {`
-  Intenta parsear la receta embebida. El `!` invierte el resultado para entrar al bloque solo si también falla.
-
-Línea 39: `printf("ERROR: embedded default recipe is invalid: %s\n", parser.getLastError());`
-  Reporta un error crítico: ni la receta externa ni la embebida son válidas.
-
-Línea 40: `return false;`
-  Devuelve fallo al llamador. En `main`, esto provoca un bucle infinito seguro.
-
-Línea 41: `}`
-  Cierra el bloque de fallo del fallback.
-
-Línea 42: línea en blanco.
-  Separa validación fallback del retorno exitoso.
-
-Línea 43: `return true;`
-  Indica que la receta embebida fue parseada correctamente y `recipe` contiene datos utilizables.
-
-Línea 44: `}`
-  Cierra `loadRecipeFromMicroSdOrFallback`.
-
-Línea 45: línea en blanco.
-  Separa funciones auxiliares.
-
-Línea 46: `static int executeRecipeHomeSequence(`
-  Inicia una segunda función auxiliar local que devuelve un código de resultado HOME (`HOME_SEQUENCE_OK` o error).
-
-Línea 47: `AdvanceMotionController& motion,`
-  Primer parámetro: referencia al controlador de movimiento ya construido. Se pasa por referencia para operar sobre el objeto real.
-
-Línea 48: `const MachineRecipe& recipe`
-  Segundo parámetro: receta solo lectura. Se usa para consultar `homeOrderCount` y `homeOrder` sin modificarla.
-
-Línea 49: `) {`
-  Cierra la lista de parámetros y abre el cuerpo de la función.
-
-Línea 50: `switch (recipe.homeOrderCount) {`
-  Selecciona cómo llamar a `executeHomeSequence` según la cantidad de nombres de eje en la receta. Esto es necesario porque `std::initializer_list` debe construirse con una cantidad fija de elementos en el código.
-
-Líneas 51-52: `case 1:` / `return executeHomeSequence(motion, { recipe.homeOrder[0] });`
-  Si hay 1 eje en el orden HOME, ejecuta HOME solo con ese nombre.
-
-Líneas 53-54: `case 2:` / llamada con `homeOrder[0]` y `homeOrder[1]`.
-  Si hay 2 ejes, crea una lista de 2 nombres y delega al bloque funcional.
-
-Líneas 55-56: `case 3:` / llamada con 3 nombres.
-  Caso típico para máquinas XYZ: ejecuta HOME en el orden de tres ejes indicado por la receta.
-
-Líneas 57-58: `case 4:` / llamada con 4 nombres.
-  Permite máquinas de cuatro ejes.
-
-Líneas 59-60: `case 5:` / llamada con 5 nombres.
-  Permite máquinas de cinco ejes.
-
-Líneas 61-62: `case 6:` / llamada con 6 nombres.
-  Permite máquinas de seis ejes.
-
-Líneas 63-64: `case 7:` / llamada con 7 nombres.
-  Permite máquinas de siete ejes.
-
-Líneas 65-66: `case 8:` / llamada con 8 nombres.
-  Permite el máximo definido por `MACHINE_RECIPE_MAX_HOME_ORDER` y por el controlador.
-
-Línea 67: `default:`
-  Atiende cualquier conteo no cubierto, especialmente 0 cuando la receta no define `homeOrder`.
-
-Línea 68: `printf("WARNING: recipe has no homeOrder. Using controller default HOME order.\n");`
-  Informa que se usará el orden HOME por defecto del controlador porque la receta no especificó uno válido.
-
-Línea 69: `motion.init();`
-  Inicializa el controlador y hardware antes de ejecutar HOME por el camino predeterminado.
-
-Línea 70: `return motion.homeAll() ? HOME_SEQUENCE_OK : HOME_SEQUENCE_ERROR_HOMING_FAILED;`
-  Ejecuta HOME en todos los ejes. Usa operador ternario: si `homeAll()` devuelve `true`, retorna éxito; si no, retorna error de homing.
-
-Línea 71: `}`
-  Cierra el `switch`.
-
-Línea 72: `}`
-  Cierra `executeRecipeHomeSequence`.
-
-Línea 73: línea en blanco.
-  Separa funciones auxiliares de la función principal.
-
-Línea 74: `int main() {`
-  Punto de entrada de la aplicación embebida. Devuelve `int`, aunque en firmware normalmente nunca retorna.
-
-Línea 75: `stdio_init_all();`
-  Inicializa la salida/entrada estándar para permitir `printf` por USB serial u otros backends configurados.
-
-Línea 76: `sleep_ms(2000);`
-  Espera 2 segundos para dar tiempo al host a abrir el monitor serial después del arranque de la placa.
-
-Línea 77: línea en blanco.
-  Separa inicialización básica del mensaje de arranque.
-
-Línea 78: `printf("\nStarting motion project with microSD recipe loader...\n");`
-  Mensaje inicial que confirma que esta versión usa cargador de receta desde microSD.
-
-Línea 79: línea en blanco.
-  Separa mensaje del objeto receta.
-
-Línea 80: `MachineRecipe recipe;`
-  Declara la instancia principal de receta. Esta estructura contendrá ejes, conteo de ejes y orden HOME.
-
-Línea 81: `if (!loadRecipeFromMicroSdOrFallback(recipe)) {`
-  Intenta llenar `recipe`. Si la función devuelve `false`, entra al bloque de parada segura.
-
-Línea 82: `while (true) {`
-  Inicia un bucle infinito porque no hay configuración válida para mover motores con seguridad.
-
-Línea 83: `tight_loop_contents();`
-  Marca el cuerpo del bucle como una espera intencional para el SDK/herramientas, sin hacer trabajo activo.
-
-Línea 84: `}`
-  Cierra el bucle infinito de fallo de receta.
-
-Línea 85: `}`
-  Cierra el `if` de fallo de carga.
-
-Línea 86: línea en blanco.
-  Separa carga de receta de la configuración del generador de pulsos.
-
-Línea 87: `StepperPioPulseEngine pulseEngine(`
-  Instancia el motor de pulsos PIO que se pasará por referencia al controlador de movimiento.
-
-Línea 88: `/* selectedPioBlock */      pio0,`
-  Selecciona el bloque PIO 0 de la RP2040/RP2350 para ejecutar el programa generador de pulsos.
-
-Línea 89: `/* selectedStateMachine */  0,`
-  Selecciona la máquina de estado 0 dentro de `pio0`.
-
-Línea 90: `/* firstStepGpio */         2,`
-  Define GPIO 2 como primer pin STEP del grupo. El motor PIO trabaja con un grupo de hasta 8 pines STEP consecutivos.
-
-Línea 91: `/* minStepIntervalUs */     10`
-  Define 10 microsegundos como intervalo mínimo entre eventos STEP, límite usado para proteger la frecuencia máxima de pulsos.
-
-Línea 92: `);`
-  Cierra la construcción de `pulseEngine`.
-
-Línea 93: línea en blanco.
-  Separa el motor de pulsos de la memoria de ejes.
-
-Línea 94: `alignas(AdvanceStepperAxis) static unsigned char axisStorage[MACHINE_RECIPE_MAX_AXES][sizeof(AdvanceStepperAxis)];`
-  Reserva memoria estática cruda para hasta 8 objetos `AdvanceStepperAxis`, con alineación correcta para esa clase. Esto evita depender de asignación dinámica de heap en firmware.
-
-Línea 95: `AdvanceStepperAxis* axes[MACHINE_RECIPE_MAX_AXES];`
-  Declara un arreglo de punteros. Cada elemento apuntará al eje construido en el buffer correspondiente de `axisStorage`.
-
-Línea 96: línea en blanco.
-  Separa memoria de construcción del ciclo de construcción.
-
-Línea 97: `for (uint axisIndex = 0; axisIndex < recipe.axisCount; axisIndex++) {`
-  Recorre todos los ejes definidos por la receta. `axisIndex` va de 0 a `recipe.axisCount - 1`.
-
-Línea 98: `axes[axisIndex] = new (axisStorage[axisIndex]) AdvanceStepperAxis(recipe.axes[axisIndex].config);`
-  Construye un objeto `AdvanceStepperAxis` dentro de memoria preasignada usando placement new. La configuración proviene de `recipe.axes[axisIndex].config`.
-
-Línea 99: `printf(`
-  Inicia una llamada multilínea a `printf` para reportar el eje recién cargado.
-
-Línea 100: `"Axis %u loaded: %s STEP=%u DIR=%u EN=%u\n",`
-  Formato del mensaje: índice, nombre, pin STEP, pin DIR y pin ENABLE.
-
-Línea 101: `axisIndex,`
-  Primer argumento del formato: número de eje dentro del arreglo.
-
-Línea 102: `axes[axisIndex]->getAxisName(),`
-  Segundo argumento: nombre lógico del eje, obtenido desde el objeto `AdvanceStepperAxis`.
-
-Línea 103: `axes[axisIndex]->getStepPin(),`
-  Tercer argumento: pin STEP configurado para ese eje.
-
-Línea 104: `axes[axisIndex]->getDirPin(),`
-  Cuarto argumento: pin DIR configurado para ese eje.
-
-Línea 105: `axes[axisIndex]->getEnablePin()`
-  Quinto argumento: pin ENABLE configurado para ese eje.
-
-Línea 106: `);`
-  Cierra la llamada a `printf`.
-
-Línea 107: `}`
-  Cierra el ciclo que construye y reporta los ejes.
-
-Línea 108: línea en blanco.
-  Separa construcción de ejes de la construcción del controlador.
-
-Línea 109: `AdvanceMotionController motion(`
-  Instancia el controlador principal de movimiento.
-
-Línea 110: `axes,`
-  Pasa el arreglo de punteros a ejes.
-
-Línea 111: `recipe.axisCount,`
-  Pasa la cantidad real de ejes activos definidos por la receta.
-
-Línea 112: `pulseEngine`
-  Pasa el motor de pulsos PIO por referencia para que el controlador emita los pasos.
-
-Línea 113: `);`
-  Cierra la construcción de `motion`.
-
-Línea 114: línea en blanco.
-  Separa creación del controlador de la secuencia HOME.
-
-Línea 115: `executeRecipeHomeSequence(motion, recipe);`
-  Ejecuta HOME usando el orden especificado por la receta. Importante: el valor devuelto no se comprueba aquí, por lo que una mejora futura sería validar el resultado antes de mover.
-
-Línea 116: línea en blanco.
-  Separa HOME del primer movimiento seguro.
-
-Línea 117: `bool safeMoveOk =`
-  Declara una bandera que recibirá si el movimiento seguro fue aceptado/iniciado correctamente.
-
-Línea 118: `motion.moveToSafePositionAfterHome(`
-  Solicita al controlador moverse a una posición segura después de HOME.
-
-Líneas 119-123: lista `{ 0.0f, 0.0f, 10.0f }`.
-  Define posiciones objetivo en milímetros para los primeros tres ejes: X=0, Y=0, Z=10. Si la receta tiene exactamente tres ejes, coincide con XYZ; en máquinas con otra cantidad debe revisarse que el controlador acepte la dimensión solicitada.
-
-Línea 124: `/* speedMmS */ 20.0f`
-  Velocidad solicitada para el movimiento seguro: 20 mm/s.
-
-Línea 125: `);`
-  Cierra la llamada a `moveToSafePositionAfterHome`.
-
-Línea 126: línea en blanco.
-  Separa solicitud de movimiento de la validación de error.
-
-Línea 127: `if (!safeMoveOk) {`
-  Si el movimiento seguro no pudo iniciarse o validarse, entra al manejo de error.
-
-Línea 128: `printf("ERROR: Safe move failed.\n");`
-  Reporta fallo del movimiento seguro.
-
-Línea 129: `motion.emergencyStop();`
-  Ejecuta parada de emergencia para dejar el sistema en condición segura.
-
-Línea 130: `while (true) {`
-  Inicia bucle infinito para no continuar con movimientos posteriores tras el error.
-
-Línea 131: `tight_loop_contents();`
-  Cuerpo de espera intencional.
-
-Línea 132: `}`
-  Cierra el bucle infinito de error de movimiento seguro.
-
-Línea 133: `}`
-  Cierra el `if` de error.
-
-Línea 134: línea en blanco.
-  Separa validación de la espera de finalización.
-
-Línea 135: `while (motion.isBusy()) {`
-  Mientras el controlador indique que hay movimiento activo, continúa actualizando.
-
-Línea 136: `motion.update();`
-  Avanza el planificador/ejecutor: genera pasos, actualiza perfiles y progresa el movimiento.
-
-Línea 137: `}`
-  Cierra el bucle de espera del movimiento seguro.
-
-Línea 138: línea en blanco.
-  Separa finalización del mensaje.
-
-Línea 139: `printf("Safe position reached.\n");`
-  Informa que la posición segura fue alcanzada.
-
-Línea 140: línea en blanco.
-  Separa el primer movimiento del segundo.
-
-Línea 141: `bool directMoveOk =`
-  Declara una bandera para saber si el movimiento lineal directo fue aceptado.
-
-Línea 142: `motion.moveLinearTo(`
-  Solicita un movimiento lineal coordinado hacia una posición absoluta.
-
-Líneas 143-147: lista `{ 50.0f, 50.0f, 10.0f }`.
-  Define el destino absoluto en milímetros para los primeros tres ejes: X=50, Y=50, Z=10.
-
-Línea 148: `/* requestedSpeedMmS */ 30.0f`
-  Velocidad lineal solicitada: 30 mm/s. El controlador puede limitarla por límites de ejes o motor de pulsos.
-
-Línea 149: `);`
-  Cierra la llamada a `moveLinearTo`.
-
-Línea 150: línea en blanco.
-  Separa solicitud de validación.
-
-Línea 151: `if (!directMoveOk) {`
-  Si el movimiento directo no se pudo preparar/iniciar, entra al manejo de error.
-
-Línea 152: `printf("ERROR: Direct move failed.\n");`
-  Reporta el fallo.
-
-Línea 153: `motion.emergencyStop();`
-  Detiene de emergencia el controlador.
-
-Línea 154: `while (true) {`
-  Evita continuar el programa después del error.
-
-Línea 155: `tight_loop_contents();`
-  Espera intencional dentro del bucle infinito.
-
-Línea 156: `}`
-  Cierra el bucle de error del movimiento directo.
-
-Línea 157: `}`
-  Cierra el `if` de error del movimiento directo.
-
-Línea 158: línea en blanco.
-  Separa validación de espera activa.
-
-Línea 159: `while (motion.isBusy()) {`
-  Espera mientras el movimiento directo esté en ejecución.
-
-Línea 160: `motion.update();`
-  Actualiza el controlador para emitir pasos y avanzar el perfil de movimiento.
-
-Línea 161: `}`
-  Cierra el bucle de espera.
-
-Línea 162: línea en blanco.
-  Separa finalización de mensaje.
-
-Línea 163: `printf("Direct move completed.\n");`
-  Informa que el movimiento directo terminó correctamente.
-
-Línea 164: línea en blanco.
-  Separa movimientos directos de la configuración de trayectoria suavizada.
-
-Línea 165: `motion.configurePathSmoothing(`
-  Configura el suavizado/mezcla entre segmentos para los movimientos en cola.
-
-Línea 166: `/* enabled */              true,`
-  Activa el suavizado de trayectoria.
-
-Línea 167: `/* blendDistanceMm */      2.0f,`
-  Distancia de mezcla alrededor de esquinas: 2 mm.
-
-Línea 168: `/* blendSegmentLengthMm */ 0.5f,`
-  Longitud de cada subsegmento de mezcla: 0.5 mm. Segmentos más cortos aproximan mejor la curva pero aumentan carga de planificación.
-
-Línea 169: `/* maxBlendSegments */     12,`
-  Máximo de segmentos generados para una mezcla.
-
-Línea 170: `/* blendSpeedScale */      0.70f`
-  Escala de velocidad durante la mezcla: 70% de la velocidad solicitada para suavizar cambios de dirección.
-
-Línea 171: `);`
-  Cierra la configuración de suavizado.
-
-Línea 172: línea en blanco.
-  Separa configuración de limpieza de cola.
-
-Línea 173: `motion.clearMotionQueue();`
-  Limpia cualquier movimiento pendiente antes de cargar la nueva ruta.
-
-Línea 174: línea en blanco.
-  Separa limpieza de la primera inserción en cola.
-
-Línea 175: `motion.queueLinearTo(`
-  Añade el primer movimiento lineal a la cola.
-
-Líneas 176-180: lista `{ 100.0f, 0.0f, 10.0f }`.
-  Primer destino en cola: X=100, Y=0, Z=10 mm.
-
-Línea 181: `/* requestedSpeedMmS */ 40.0f`
-  Velocidad solicitada para este segmento: 40 mm/s.
-
-Línea 182: `);`
-  Cierra la primera llamada a `queueLinearTo`.
-
-Línea 183: línea en blanco.
-  Separa segmentos de cola.
-
-Línea 184: `motion.queueLinearTo(`
-  Añade el segundo movimiento lineal a la cola.
-
-Líneas 185-189: lista `{ 100.0f, 100.0f, 10.0f }`.
-  Segundo destino en cola: X=100, Y=100, Z=10 mm.
-
-Línea 190: `/* requestedSpeedMmS */ 40.0f`
-  Velocidad solicitada del segundo segmento: 40 mm/s.
-
-Línea 191: `);`
-  Cierra la segunda llamada a `queueLinearTo`.
-
-Línea 192: línea en blanco.
-  Separa segmentos.
-
-Línea 193: `motion.queueLinearTo(`
-  Añade el tercer movimiento lineal a la cola.
-
-Líneas 194-198: lista `{ 200.0f, 100.0f, 10.0f }`.
-  Tercer destino en cola: X=200, Y=100, Z=10 mm.
-
-Línea 199: `/* requestedSpeedMmS */ 40.0f`
-  Velocidad solicitada del tercer segmento: 40 mm/s.
-
-Línea 200: `);`
-  Cierra la tercera llamada a `queueLinearTo`.
-
-Línea 201: línea en blanco.
-  Separa carga de cola de preparación.
-
-Línea 202: `bool queueOk = motion.prepareQueuedMoves();`
-  Planifica la cola completa, aplicando validaciones y suavizado. Devuelve si la cola pudo prepararse para ejecución.
-
-Línea 203: línea en blanco.
-  Separa preparación de validación de error.
-
-Línea 204: `if (!queueOk) {`
-  Si la cola no pudo planificarse, entra al manejo de error.
-
-Línea 205: `printf("ERROR: Could not prepare movement queue.\n");`
-  Reporta que no fue posible preparar la ruta en cola.
-
-Línea 206: `motion.emergencyStop();`
-  Detiene de emergencia por seguridad.
-
-Línea 207: `while (true) {`
-  Inicia bucle infinito para impedir continuar con una cola inválida.
-
-Línea 208: `tight_loop_contents();`
-  Espera intencional dentro del bucle.
-
-Línea 209: `}`
-  Cierra el bucle infinito de error de cola.
-
-Línea 210: `}`
-  Cierra el `if` de error de cola.
-
-Línea 211: línea en blanco.
-  Separa validación de mensaje final.
-
-Línea 212: `printf("Movement queue ready.\n");`
-  Informa que la cola quedó lista. La ejecución real progresa por llamadas posteriores a `motion.update()`.
-
-Línea 213: línea en blanco.
-  Separa preparación de cola del bucle principal permanente.
-
-Línea 214: `while (true) {`
-  Inicia el bucle principal infinito del firmware. En un microcontrolador, el programa no debe terminar.
-
-Línea 215: `motion.update();`
-  Actualiza continuamente el controlador para ejecutar movimientos planificados, generar pasos cuando corresponda y cargar siguientes bloques.
-
-Línea 216: `}`
-  Cierra el bucle principal infinito.
-
-Línea 217: `}`
-  Cierra `main`. En la práctica no se alcanza porque el bucle de las líneas 214-216 es infinito.
-
-Notas de diseño y recomendaciones
----------------------------------
-- La actualización principal respecto al manual anterior es que la configuración de ejes dejó de estar codificada directamente en `main.cpp`; ahora se obtiene de `MachineRecipe` mediante microSD o fallback embebido.
-- El uso de placement new sobre `axisStorage` evita fragmentación o dependencia del heap, una práctica conveniente en firmware.
-- El arreglo `axes` tiene capacidad máxima fija, pero solo se construyen `recipe.axisCount` elementos.
-- Las posiciones de ejemplo tienen tres coordenadas. Si se usan recetas con más o menos de tres ejes, conviene revisar que las llamadas con listas de 3 valores sean compatibles con la validación del controlador.
-- `executeRecipeHomeSequence(motion, recipe)` devuelve un código, pero actualmente `main` no lo valida. Si HOME falla, el programa podría seguir intentando movimientos; se recomienda capturar el retorno y detener en caso de error.
-- Las llamadas a `queueLinearTo` no comprueban su retorno individual en este archivo. La validación final se realiza con `prepareQueuedMoves()`, pero si la API devuelve errores útiles por inserción, sería recomendable registrarlos.
+MANUAL ACTUALIZADO - prgProject/main.cpp
+================================================================================
+Funcion inicial del archivo
+- Punto de entrada del firmware; carga receta, instancia ejes/controlador y ejecuta HOME/movimientos.
+
+Metodos, variables, secciones o instancias detectadas
+- L11: `int main() {`
+- L12: `stdio_init_all();`
+- L13: `sleep_ms(2000);`
+- L15: `printf("\nStarting motion project with microSD recipe loader...\n");`
+- L18: `RecipeLoadStatus recipeLoadStatus = loadRecipeFromMicroSdOrFallback(recipe);`
+- L20: `if (recipeLoadStatus != RecipeLoadStatus::Ok) {`
+- L23: `getRecipeLoadStatusMessage(recipeLoadStatus)`
+- L26: `tight_loop_contents();`
+- L38: `MotionSystemStatus motionSystemStatus = initializeMotionSystem(recipe, pulseEngine, motionSystem);`
+- L40: `if (motionSystemStatus != MotionSystemStatus::Ok) {`
+- L43: `getMotionSystemStatusMessage(motionSystemStatus)`
+- L46: `tight_loop_contents();`
+- L50: `AdvanceMotionController& motion = *motionSystem.motion;`
+- L52: `executeRecipeHomeSequence(motion, recipe);`
+- L54: `bool safeMoveOk =`
+- L65: `printf("ERROR: Safe move failed.\n");`
+- L66: `motion.emergencyStop();`
+- L68: `tight_loop_contents();`
+- L73: `motion.update();`
+- L76: `printf("Safe position reached.\n");`
+- L78: `bool directMoveOk =`
+- L89: `printf("ERROR: Direct move failed.\n");`
+- L90: `motion.emergencyStop();`
+- L92: `tight_loop_contents();`
+- L97: `motion.update();`
+- L100: `printf("Direct move completed.\n");`
+- L110: `motion.clearMotionQueue();`
+- L139: `bool queueOk = motion.prepareQueuedMoves();`
+- L142: `printf("ERROR: Could not prepare movement queue.\n");`
+- L143: `motion.emergencyStop();`
+- L145: `tight_loop_contents();`
+- L149: `printf("Movement queue ready.\n");`
+- L152: `motion.update();`
+
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
+
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#include "pico/stdlib.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 2 | `#include <stdio.h>` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 3 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 4 | `#include "StepperPioPulseEngine.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 5 | `#include "AdvanceMotionController.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 6 | `#include "MachineRecipe.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 7 | `#include "MotionSystemInitializer.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 8 | `#include "RecipeLoader.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 9 | `#include "RecipeHomeSequence.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 10 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 11 | `int main() {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 12 | `    stdio_init_all();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 13 | `    sleep_ms(2000);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 14 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 15 | `    printf("\nStarting motion project with microSD recipe loader...\n");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 16 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 17 | `    MachineRecipe recipe;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 18 | `    RecipeLoadStatus recipeLoadStatus = loadRecipeFromMicroSdOrFallback(recipe);` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 19 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 20 | `    if (recipeLoadStatus != RecipeLoadStatus::Ok) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 21 | `        printf(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 22 | `            "ERROR: Could not load machine recipe: %s\n",` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 23 | `            getRecipeLoadStatusMessage(recipeLoadStatus)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 24 | `        );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 25 | `        while (true) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 26 | `            tight_loop_contents();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 27 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 28 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 29 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 30 | `    StepperPioPulseEngine pulseEngine(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 31 | `        /* selectedPioBlock */      pio0,` | Comentario/documentacion interna del codigo o configuracion. |
+| 32 | `        /* selectedStateMachine */  0,` | Comentario/documentacion interna del codigo o configuracion. |
+| 33 | `        /* firstStepGpio */         2,` | Comentario/documentacion interna del codigo o configuracion. |
+| 34 | `        /* minStepIntervalUs */     10` | Comentario/documentacion interna del codigo o configuracion. |
+| 35 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 36 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 37 | `    static MotionSystem motionSystem;` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 38 | `    MotionSystemStatus motionSystemStatus = initializeMotionSystem(recipe, pulseEngine, motionSystem);` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 39 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 40 | `    if (motionSystemStatus != MotionSystemStatus::Ok) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 41 | `        printf(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 42 | `            "ERROR: Could not initialize motion system: %s\n",` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 43 | `            getMotionSystemStatusMessage(motionSystemStatus)` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 44 | `        );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 45 | `        while (true) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 46 | `            tight_loop_contents();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 47 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 48 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 49 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 50 | `    AdvanceMotionController& motion = *motionSystem.motion;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 51 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 52 | `    executeRecipeHomeSequence(motion, recipe);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 53 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 54 | `    bool safeMoveOk =` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 55 | `        motion.moveToSafePositionAfterHome(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 56 | `            {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 57 | `                0.0f,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 58 | `                0.0f,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 59 | `                10.0f` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 60 | `            },` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 61 | `            /* speedMmS */ 20.0f` | Comentario/documentacion interna del codigo o configuracion. |
+| 62 | `        );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 63 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 64 | `    if (!safeMoveOk) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 65 | `        printf("ERROR: Safe move failed.\n");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 66 | `        motion.emergencyStop();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 67 | `        while (true) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 68 | `            tight_loop_contents();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 69 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 70 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 71 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 72 | `    while (motion.isBusy()) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 73 | `        motion.update();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 74 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 75 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 76 | `    printf("Safe position reached.\n");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 77 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 78 | `    bool directMoveOk =` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 79 | `        motion.moveLinearTo(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 80 | `            {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 81 | `                50.0f,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 82 | `                50.0f,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 83 | `                10.0f` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 84 | `            },` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 85 | `            /* requestedSpeedMmS */ 30.0f` | Comentario/documentacion interna del codigo o configuracion. |
+| 86 | `        );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 87 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 88 | `    if (!directMoveOk) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 89 | `        printf("ERROR: Direct move failed.\n");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 90 | `        motion.emergencyStop();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 91 | `        while (true) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 92 | `            tight_loop_contents();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 93 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 94 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 95 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 96 | `    while (motion.isBusy()) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 97 | `        motion.update();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 98 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 99 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 100 | `    printf("Direct move completed.\n");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 101 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 102 | `    motion.configurePathSmoothing(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 103 | `        /* enabled */              true,` | Comentario/documentacion interna del codigo o configuracion. |
+| 104 | `        /* blendDistanceMm */      2.0f,` | Comentario/documentacion interna del codigo o configuracion. |
+| 105 | `        /* blendSegmentLengthMm */ 0.5f,` | Comentario/documentacion interna del codigo o configuracion. |
+| 106 | `        /* maxBlendSegments */     12,` | Comentario/documentacion interna del codigo o configuracion. |
+| 107 | `        /* blendSpeedScale */      0.70f` | Comentario/documentacion interna del codigo o configuracion. |
+| 108 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 109 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 110 | `    motion.clearMotionQueue();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 111 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 112 | `    motion.queueLinearTo(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 113 | `        {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 114 | `            100.0f,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 115 | `            0.0f,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 116 | `            10.0f` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 117 | `        },` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 118 | `        /* requestedSpeedMmS */ 40.0f` | Comentario/documentacion interna del codigo o configuracion. |
+| 119 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 120 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 121 | `    motion.queueLinearTo(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 122 | `        {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 123 | `            100.0f,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 124 | `            100.0f,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 125 | `            10.0f` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 126 | `        },` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 127 | `        /* requestedSpeedMmS */ 40.0f` | Comentario/documentacion interna del codigo o configuracion. |
+| 128 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 129 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 130 | `    motion.queueLinearTo(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 131 | `        {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 132 | `            200.0f,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 133 | `            100.0f,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 134 | `            10.0f` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 135 | `        },` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 136 | `        /* requestedSpeedMmS */ 40.0f` | Comentario/documentacion interna del codigo o configuracion. |
+| 137 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 138 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 139 | `    bool queueOk = motion.prepareQueuedMoves();` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 140 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 141 | `    if (!queueOk) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 142 | `        printf("ERROR: Could not prepare movement queue.\n");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 143 | `        motion.emergencyStop();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 144 | `        while (true) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 145 | `            tight_loop_contents();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 146 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 147 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 148 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 149 | `    printf("Movement queue ready.\n");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 150 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 151 | `    while (true) {` | Inicia un ciclo de repeticion sobre indices, estados o condiciones. |
+| 152 | `        motion.update();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 153 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 154 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |

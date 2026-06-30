@@ -1,674 +1,435 @@
-MANUAL DETALLADO: src/srcStepper/AdvanceStepperAxis.cpp
-=======================================================
+MANUAL ACTUALIZADO - src/srcStepper/AdvanceStepperAxis.cpp
+================================================================================
+Funcion inicial del archivo
+- Representa un eje individual: pines, conversion mm/pasos, direccion, HOME y limites.
 
-Finalidad: Este archivo funciona como modelo de un eje paso a paso; gestiona pines, conversión mm/pasos, límites y homing.
+Metodos, variables, secciones o instancias detectadas
+- L5: `AdvanceStepperAxis::AdvanceStepperAxis(const StepperAxisConfig& axisConfig) {`
+- L6: `config = axisConfig;`
+- L8: `stepsPerMm = 0.0f;`
+- L10: `currentPositionSteps = 0;`
+- L11: `targetPositionSteps = 0;`
+- L13: `enabled = false;`
+- L14: `currentDirection = true;`
+- L15: `homed = false;`
+- L17: `simulatedHomeActive = false;`
+- L19: `calculateStepsPerMm();`
+- L22: `void AdvanceStepperAxis::calculateStepsPerMm() {`
+- L23: `if (config.travelPerRevolutionMm <= 0.0f) {`
+- L24: `stepsPerMm = 0.0f;`
+- L28: `if (config.gearRatio <= 0.0f) {`
+- L29: `stepsPerMm = 0.0f;`
+- L33: `stepsPerMm =`
+- L34: `((float)config.motorStepsPerRev *`
+- L35: `(float)config.microsteps *`
+- L44: `if (pin == StepperAxisConfig::PIN_NOT_USED) {`
+- L48: `gpio_init(pin);`
+- L49: `gpio_set_dir(pin, GPIO_IN);`
+- L52: `gpio_pull_up(pin);`
+- L54: `gpio_disable_pulls(pin);`
+- L62: `if (pin == StepperAxisConfig::PIN_NOT_USED) {`
+- L66: `bool rawState = gpio_get(pin);`
+- L75: `void AdvanceStepperAxis::init() {`
+- L76: `gpio_init(config.dirPin);`
+- L77: `gpio_set_dir(config.dirPin, GPIO_OUT);`
+- L78: `gpio_put(config.dirPin, 0);`
+- L80: `gpio_init(config.enablePin);`
+- L81: `gpio_set_dir(config.enablePin, GPIO_OUT);`
+- L83: `disable();`
+- L107: `const char* AdvanceStepperAxis::getAxisName() const {`
+- L111: `void AdvanceStepperAxis::enable() {`
+- L113: `gpio_put(config.enablePin, 0);`
+- L115: `gpio_put(config.enablePin, 1);`
+- L118: `enabled = true;`
+- L121: `void AdvanceStepperAxis::disable() {`
+- L123: `gpio_put(config.enablePin, 1);`
+- L125: `gpio_put(config.enablePin, 0);`
+- L128: `enabled = false;`
+- L131: `void AdvanceStepperAxis::setDirection(bool positiveDirection) {`
+- L132: `currentDirection = positiveDirection;`
+- L134: `bool pinState = positiveDirection;`
+- L137: `pinState = !pinState;`
+- L140: `gpio_put(config.dirPin, pinState ? 1 : 0);`
+- L143: `void AdvanceStepperAxis::setDirectionByDelta(int32_t deltaSteps) {`
+- L144: `setDirection(deltaSteps >= 0);`
+- L147: `void AdvanceStepperAxis::setCurrentPositionSteps(int32_t positionSteps) {`
+- L148: `currentPositionSteps = positionSteps;`
+- L151: `void AdvanceStepperAxis::setCurrentPositionMm(float positionMm) {`
+- L152: `currentPositionSteps = mmToSteps(positionMm);`
+- L155: `int32_t AdvanceStepperAxis::getCurrentPositionSteps() const {`
+- L159: `float AdvanceStepperAxis::getCurrentPositionMm() const {`
+- L160: `return stepsToMm(currentPositionSteps);`
+- L163: `int32_t AdvanceStepperAxis::mmToSteps(float mm) const {`
+- L164: `return (int32_t)lroundf(mm * stepsPerMm);`
+- L167: `float AdvanceStepperAxis::stepsToMm(int32_t steps) const {`
+- L168: `if (stepsPerMm <= 0.0f) {`
+- L172: `return (float)steps / stepsPerMm;`
+- L175: `float AdvanceStepperAxis::getStepsPerMm() const {`
+- L179: `float AdvanceStepperAxis::getMaxSpeedMmS() const {`
+- L183: `float AdvanceStepperAxis::getAccelerationMmS2() const {`
+- L187: `uint AdvanceStepperAxis::getStepPin() const {`
+- L191: `uint AdvanceStepperAxis::getDirPin() const {`
+- L195: `uint AdvanceStepperAxis::getEnablePin() const {`
+- L199: `bool AdvanceStepperAxis::isEnabled() const {`
+- L203: `void AdvanceStepperAxis::addPositionSteps(int32_t deltaSteps) {`
+- L204: `currentPositionSteps += deltaSteps;`
+- L207: `bool AdvanceStepperAxis::isHomeEnabled() const {`
+- L211: `bool AdvanceStepperAxis::isHomeSensorActive() const {`
+- L226: `bool AdvanceStepperAxis::isMinLimitEnabled() const {`
+- L230: `bool AdvanceStepperAxis::isMaxLimitEnabled() const {`
+- L234: `bool AdvanceStepperAxis::isMinLimitActive() const {`
+- L245: `bool AdvanceStepperAxis::isMaxLimitActive() const {`
+- L256: `bool AdvanceStepperAxis::getHomeDirectionPositive() const {`
+- L260: `float AdvanceStepperAxis::getHomingSeekSpeedMmS() const {`
+- L264: `float AdvanceStepperAxis::getHomingLatchSpeedMmS() const {`
+- L268: `float AdvanceStepperAxis::getHomingBackoffMm() const {`
+- L272: `float AdvanceStepperAxis::getMaxHomingTravelMm() const {`
+- L276: `float AdvanceStepperAxis::getHomePositionMm() const {`
+- L280: `bool AdvanceStepperAxis::isHomeSimulationEnabled() const {`
+- L284: `void AdvanceStepperAxis::setHomeSimulationEnabled(bool enabled) {`
+- L285: `config.homeSimulationEnabled = enabled;`
+- L288: `void AdvanceStepperAxis::setSimulatedHomeActive(bool active) {`
+- L289: `simulatedHomeActive = active;`
+- L292: `bool AdvanceStepperAxis::isHomed() const {`
+- L296: `void AdvanceStepperAxis::setHomed(bool state) {`
+- L297: `homed = state;`
+- L300: `bool AdvanceStepperAxis::areSoftLimitsEnabled() const {`
+- L304: `bool AdvanceStepperAxis::isTargetWithinSoftLimits(float targetMm) const {`
+- L320: `float AdvanceStepperAxis::getSoftLimitMinMm() const {`
+- L324: `float AdvanceStepperAxis::getSoftLimitMaxMm() const {`
 
-Ubicación y relación dentro del proyecto:
-- Ruta original: src/srcStepper/AdvanceStepperAxis.cpp
-- Manual generado: Manuals/AdvanceStepperAxis.cpp_manual.txt
-- Dependencias declaradas por include: AdvanceStepperAxis.h, math.h
-- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
 
-Forma de uso o instanciación esperada:
-- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
-- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
-- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
-- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
-
-Descripción línea a línea:
-Línea 1: `#include "AdvanceStepperAxis.h"`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 2: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 3: `#include <math.h>`
-  Explicación: Importa dependencias necesarias para que este archivo pueda usar tipos, funciones o declaraciones externas.
-Línea 4: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 5: `AdvanceStepperAxis::AdvanceStepperAxis(const StepperAxisConfig& axisConfig) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 6: `    config = axisConfig;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 7: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 8: `    stepsPerMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 9: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 10: `    currentPositionSteps = 0;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 11: `    targetPositionSteps = 0;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 12: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 13: `    enabled = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 14: `    currentDirection = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 15: `    homed = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 16: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 17: `    simulatedHomeActive = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 18: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 19: `    calculateStepsPerMm();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 20: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 21: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 22: `void AdvanceStepperAxis::calculateStepsPerMm() {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 23: `    if (config.travelPerRevolutionMm <= 0.0f) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 24: `        stepsPerMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 25: `        return;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 26: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 27: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 28: `    if (config.gearRatio <= 0.0f) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 29: `        stepsPerMm = 0.0f;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 30: `        return;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 31: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 32: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 33: `    stepsPerMm =`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 34: `        ((float)config.motorStepsPerRev *`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 35: `         (float)config.microsteps *`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 36: `         config.gearRatio) /`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 37: `        config.travelPerRevolutionMm;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 38: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 39: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 40: `void AdvanceStepperAxis::configureInputPin(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 41: `    uint pin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 42: `    bool usePullup`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 43: `) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 44: `    if (pin == StepperAxisConfig::PIN_NOT_USED) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 45: `        return;`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 46: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 47: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 48: `    gpio_init(pin);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 49: `    gpio_set_dir(pin, GPIO_IN);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 50: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 51: `    if (usePullup) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 52: `        gpio_pull_up(pin);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 53: `    } else {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 54: `        gpio_disable_pulls(pin);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 55: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 56: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 57: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 58: `bool AdvanceStepperAxis::readInputActive(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 59: `    uint pin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 60: `    bool activeLow`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 61: `) const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 62: `    if (pin == StepperAxisConfig::PIN_NOT_USED) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 63: `        return false;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 64: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 65: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 66: `    bool rawState = gpio_get(pin);`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 67: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 68: `    if (activeLow) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 69: `        return !rawState;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 70: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 71: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 72: `    return rawState;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 73: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 74: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 75: `void AdvanceStepperAxis::init() {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 76: `    gpio_init(config.dirPin);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 77: `    gpio_set_dir(config.dirPin, GPIO_OUT);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 78: `    gpio_put(config.dirPin, 0);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 79: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 80: `    gpio_init(config.enablePin);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 81: `    gpio_set_dir(config.enablePin, GPIO_OUT);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 82: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 83: `    disable();`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 84: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 85: `    if (config.homeEnabled && !config.homeSimulationEnabled) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 86: `        configureInputPin(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 87: `            config.homePin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 88: `            config.homeUsePullup`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 89: `        );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 90: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 91: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 92: `    if (config.minLimitEnabled) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 93: `        configureInputPin(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 94: `            config.minLimitPin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 95: `            config.minLimitUsePullup`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 96: `        );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 97: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 98: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 99: `    if (config.maxLimitEnabled) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 100: `        configureInputPin(`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 101: `            config.maxLimitPin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 102: `            config.maxLimitUsePullup`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 103: `        );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 104: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 105: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 106: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 107: `const char* AdvanceStepperAxis::getAxisName() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 108: `    return config.axisName;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 109: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 110: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 111: `void AdvanceStepperAxis::enable() {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 112: `    if (config.enableActiveLow) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 113: `        gpio_put(config.enablePin, 0);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 114: `    } else {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 115: `        gpio_put(config.enablePin, 1);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 116: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 117: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 118: `    enabled = true;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 119: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 120: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 121: `void AdvanceStepperAxis::disable() {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 122: `    if (config.enableActiveLow) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 123: `        gpio_put(config.enablePin, 1);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 124: `    } else {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 125: `        gpio_put(config.enablePin, 0);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 126: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 127: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 128: `    enabled = false;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 129: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 130: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 131: `void AdvanceStepperAxis::setDirection(bool positiveDirection) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 132: `    currentDirection = positiveDirection;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 133: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 134: `    bool pinState = positiveDirection;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 135: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 136: `    if (config.directionInvert) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 137: `        pinState = !pinState;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 138: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 139: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 140: `    gpio_put(config.dirPin, pinState ? 1 : 0);`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-Línea 141: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 142: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 143: `void AdvanceStepperAxis::setDirectionByDelta(int32_t deltaSteps) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 144: `    setDirection(deltaSteps >= 0);`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 145: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 146: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 147: `void AdvanceStepperAxis::setCurrentPositionSteps(int32_t positionSteps) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 148: `    currentPositionSteps = positionSteps;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 149: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 150: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 151: `void AdvanceStepperAxis::setCurrentPositionMm(float positionMm) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 152: `    currentPositionSteps = mmToSteps(positionMm);`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 153: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 154: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 155: `int32_t AdvanceStepperAxis::getCurrentPositionSteps() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 156: `    return currentPositionSteps;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 157: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 158: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 159: `float AdvanceStepperAxis::getCurrentPositionMm() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 160: `    return stepsToMm(currentPositionSteps);`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 161: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 162: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 163: `int32_t AdvanceStepperAxis::mmToSteps(float mm) const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 164: `    return (int32_t)lroundf(mm * stepsPerMm);`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 165: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 166: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 167: `float AdvanceStepperAxis::stepsToMm(int32_t steps) const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 168: `    if (stepsPerMm <= 0.0f) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 169: `        return 0.0f;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 170: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 171: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 172: `    return (float)steps / stepsPerMm;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 173: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 174: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 175: `float AdvanceStepperAxis::getStepsPerMm() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 176: `    return stepsPerMm;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 177: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 178: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 179: `float AdvanceStepperAxis::getMaxSpeedMmS() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 180: `    return config.maxSpeedMmS;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 181: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 182: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 183: `float AdvanceStepperAxis::getAccelerationMmS2() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 184: `    return config.accelerationMmS2;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 185: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 186: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 187: `uint AdvanceStepperAxis::getStepPin() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 188: `    return config.stepPin;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 189: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 190: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 191: `uint AdvanceStepperAxis::getDirPin() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 192: `    return config.dirPin;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 193: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 194: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 195: `uint AdvanceStepperAxis::getEnablePin() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 196: `    return config.enablePin;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 197: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 198: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 199: `bool AdvanceStepperAxis::isEnabled() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 200: `    return enabled;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 201: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 202: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 203: `void AdvanceStepperAxis::addPositionSteps(int32_t deltaSteps) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 204: `    currentPositionSteps += deltaSteps;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 205: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 206: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 207: `bool AdvanceStepperAxis::isHomeEnabled() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 208: `    return config.homeEnabled;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 209: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 210: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 211: `bool AdvanceStepperAxis::isHomeSensorActive() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 212: `    if (!config.homeEnabled) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 213: `        return false;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 214: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 215: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 216: `    if (config.homeSimulationEnabled) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 217: `        return simulatedHomeActive;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 218: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 219: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 220: `    return readInputActive(`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 221: `        config.homePin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 222: `        config.homeActiveLow`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 223: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 224: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 225: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 226: `bool AdvanceStepperAxis::isMinLimitEnabled() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 227: `    return config.minLimitEnabled;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 228: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 229: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 230: `bool AdvanceStepperAxis::isMaxLimitEnabled() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 231: `    return config.maxLimitEnabled;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 232: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 233: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 234: `bool AdvanceStepperAxis::isMinLimitActive() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 235: `    if (!config.minLimitEnabled) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 236: `        return false;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 237: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 238: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 239: `    return readInputActive(`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 240: `        config.minLimitPin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 241: `        config.minLimitActiveLow`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 242: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 243: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 244: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 245: `bool AdvanceStepperAxis::isMaxLimitActive() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 246: `    if (!config.maxLimitEnabled) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 247: `        return false;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 248: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 249: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 250: `    return readInputActive(`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 251: `        config.maxLimitPin,`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 252: `        config.maxLimitActiveLow`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 253: `    );`
-  Explicación: Declara una variable, constante, campo, instrucción o prototipo terminado por punto y coma.
-Línea 254: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 255: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 256: `bool AdvanceStepperAxis::getHomeDirectionPositive() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 257: `    return config.homeDirectionPositive;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 258: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 259: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 260: `float AdvanceStepperAxis::getHomingSeekSpeedMmS() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 261: `    return config.homingSeekSpeedMmS;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 262: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 263: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 264: `float AdvanceStepperAxis::getHomingLatchSpeedMmS() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 265: `    return config.homingLatchSpeedMmS;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 266: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 267: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 268: `float AdvanceStepperAxis::getHomingBackoffMm() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 269: `    return config.homingBackoffMm;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 270: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 271: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 272: `float AdvanceStepperAxis::getMaxHomingTravelMm() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 273: `    return config.maxHomingTravelMm;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 274: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 275: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 276: `float AdvanceStepperAxis::getHomePositionMm() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 277: `    return config.homePositionMm;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 278: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 279: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 280: `bool AdvanceStepperAxis::isHomeSimulationEnabled() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 281: `    return config.homeSimulationEnabled;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 282: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 283: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 284: `void AdvanceStepperAxis::setHomeSimulationEnabled(bool enabled) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 285: `    config.homeSimulationEnabled = enabled;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 286: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 287: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 288: `void AdvanceStepperAxis::setSimulatedHomeActive(bool active) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 289: `    simulatedHomeActive = active;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 290: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 291: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 292: `bool AdvanceStepperAxis::isHomed() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 293: `    return homed;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 294: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 295: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 296: `void AdvanceStepperAxis::setHomed(bool state) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 297: `    homed = state;`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 298: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 299: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 300: `bool AdvanceStepperAxis::areSoftLimitsEnabled() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 301: `    return config.softLimitsEnabled;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 302: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 303: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 304: `bool AdvanceStepperAxis::isTargetWithinSoftLimits(float targetMm) const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 305: `    if (!config.softLimitsEnabled) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 306: `        return true;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 307: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 308: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 309: `    if (targetMm < config.softLimitMinMm) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 310: `        return false;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 311: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 312: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 313: `    if (targetMm > config.softLimitMaxMm) {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 314: `        return false;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 315: `    }`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 316: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 317: `    return true;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 318: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 319: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 320: `float AdvanceStepperAxis::getSoftLimitMinMm() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 321: `    return config.softLimitMinMm;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 322: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-Línea 323: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 324: `float AdvanceStepperAxis::getSoftLimitMaxMm() const {`
-  Explicación: Abre un bloque de código: función, clase, estructura, condición, ciclo o lista de inicialización.
-Línea 325: `    return config.softLimitMaxMm;`
-  Explicación: Devuelve un valor al llamador y termina la ejecución de la función actual.
-Línea 326: `}`
-  Explicación: Cierra el bloque de código abierto previamente.
-
-Resumen funcional:
-- src/srcStepper/AdvanceStepperAxis.cpp participa en el SDK aportando modelo de un eje paso a paso; gestiona pines, conversión mm/pasos, límites y homing.
-- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#include "AdvanceStepperAxis.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 2 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 3 | `#include <math.h>` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 4 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 5 | `AdvanceStepperAxis::AdvanceStepperAxis(const StepperAxisConfig& axisConfig) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 6 | `    config = axisConfig;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 7 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 8 | `    stepsPerMm = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 9 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 10 | `    currentPositionSteps = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 11 | `    targetPositionSteps = 0;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 12 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 13 | `    enabled = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 14 | `    currentDirection = true;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 15 | `    homed = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 16 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 17 | `    simulatedHomeActive = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 18 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 19 | `    calculateStepsPerMm();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 20 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 21 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 22 | `void AdvanceStepperAxis::calculateStepsPerMm() {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 23 | `    if (config.travelPerRevolutionMm <= 0.0f) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 24 | `        stepsPerMm = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 25 | `        return;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 26 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 27 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 28 | `    if (config.gearRatio <= 0.0f) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 29 | `        stepsPerMm = 0.0f;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 30 | `        return;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 31 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 32 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 33 | `    stepsPerMm =` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 34 | `        ((float)config.motorStepsPerRev *` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 35 | `         (float)config.microsteps *` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 36 | `         config.gearRatio) /` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 37 | `        config.travelPerRevolutionMm;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 38 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 39 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 40 | `void AdvanceStepperAxis::configureInputPin(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 41 | `    uint pin,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 42 | `    bool usePullup` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 43 | `) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 44 | `    if (pin == StepperAxisConfig::PIN_NOT_USED) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 45 | `        return;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 46 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 47 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 48 | `    gpio_init(pin);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 49 | `    gpio_set_dir(pin, GPIO_IN);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 50 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 51 | `    if (usePullup) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 52 | `        gpio_pull_up(pin);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 53 | `    } else {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 54 | `        gpio_disable_pulls(pin);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 55 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 56 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 57 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 58 | `bool AdvanceStepperAxis::readInputActive(` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 59 | `    uint pin,` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 60 | `    bool activeLow` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 61 | `) const {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 62 | `    if (pin == StepperAxisConfig::PIN_NOT_USED) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 63 | `        return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 64 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 65 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 66 | `    bool rawState = gpio_get(pin);` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 67 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 68 | `    if (activeLow) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 69 | `        return !rawState;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 70 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 71 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 72 | `    return rawState;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 73 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 74 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 75 | `void AdvanceStepperAxis::init() {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 76 | `    gpio_init(config.dirPin);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 77 | `    gpio_set_dir(config.dirPin, GPIO_OUT);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 78 | `    gpio_put(config.dirPin, 0);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 79 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 80 | `    gpio_init(config.enablePin);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 81 | `    gpio_set_dir(config.enablePin, GPIO_OUT);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 82 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 83 | `    disable();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 84 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 85 | `    if (config.homeEnabled && !config.homeSimulationEnabled) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 86 | `        configureInputPin(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 87 | `            config.homePin,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 88 | `            config.homeUsePullup` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 89 | `        );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 90 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 91 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 92 | `    if (config.minLimitEnabled) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 93 | `        configureInputPin(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 94 | `            config.minLimitPin,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 95 | `            config.minLimitUsePullup` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 96 | `        );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 97 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 98 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 99 | `    if (config.maxLimitEnabled) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 100 | `        configureInputPin(` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 101 | `            config.maxLimitPin,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 102 | `            config.maxLimitUsePullup` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 103 | `        );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 104 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 105 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 106 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 107 | `const char* AdvanceStepperAxis::getAxisName() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 108 | `    return config.axisName;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 109 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 110 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 111 | `void AdvanceStepperAxis::enable() {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 112 | `    if (config.enableActiveLow) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 113 | `        gpio_put(config.enablePin, 0);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 114 | `    } else {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 115 | `        gpio_put(config.enablePin, 1);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 116 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 117 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 118 | `    enabled = true;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 119 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 120 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 121 | `void AdvanceStepperAxis::disable() {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 122 | `    if (config.enableActiveLow) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 123 | `        gpio_put(config.enablePin, 1);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 124 | `    } else {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 125 | `        gpio_put(config.enablePin, 0);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 126 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 127 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 128 | `    enabled = false;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 129 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 130 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 131 | `void AdvanceStepperAxis::setDirection(bool positiveDirection) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 132 | `    currentDirection = positiveDirection;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 133 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 134 | `    bool pinState = positiveDirection;` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 135 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 136 | `    if (config.directionInvert) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 137 | `        pinState = !pinState;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 138 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 139 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 140 | `    gpio_put(config.dirPin, pinState ? 1 : 0);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 141 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 142 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 143 | `void AdvanceStepperAxis::setDirectionByDelta(int32_t deltaSteps) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 144 | `    setDirection(deltaSteps >= 0);` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 145 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 146 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 147 | `void AdvanceStepperAxis::setCurrentPositionSteps(int32_t positionSteps) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 148 | `    currentPositionSteps = positionSteps;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 149 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 150 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 151 | `void AdvanceStepperAxis::setCurrentPositionMm(float positionMm) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 152 | `    currentPositionSteps = mmToSteps(positionMm);` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 153 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 154 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 155 | `int32_t AdvanceStepperAxis::getCurrentPositionSteps() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 156 | `    return currentPositionSteps;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 157 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 158 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 159 | `float AdvanceStepperAxis::getCurrentPositionMm() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 160 | `    return stepsToMm(currentPositionSteps);` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 161 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 162 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 163 | `int32_t AdvanceStepperAxis::mmToSteps(float mm) const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 164 | `    return (int32_t)lroundf(mm * stepsPerMm);` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 165 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 166 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 167 | `float AdvanceStepperAxis::stepsToMm(int32_t steps) const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 168 | `    if (stepsPerMm <= 0.0f) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 169 | `        return 0.0f;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 170 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 171 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 172 | `    return (float)steps / stepsPerMm;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 173 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 174 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 175 | `float AdvanceStepperAxis::getStepsPerMm() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 176 | `    return stepsPerMm;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 177 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 178 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 179 | `float AdvanceStepperAxis::getMaxSpeedMmS() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 180 | `    return config.maxSpeedMmS;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 181 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 182 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 183 | `float AdvanceStepperAxis::getAccelerationMmS2() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 184 | `    return config.accelerationMmS2;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 185 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 186 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 187 | `uint AdvanceStepperAxis::getStepPin() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 188 | `    return config.stepPin;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 189 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 190 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 191 | `uint AdvanceStepperAxis::getDirPin() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 192 | `    return config.dirPin;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 193 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 194 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 195 | `uint AdvanceStepperAxis::getEnablePin() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 196 | `    return config.enablePin;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 197 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 198 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 199 | `bool AdvanceStepperAxis::isEnabled() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 200 | `    return enabled;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 201 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 202 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 203 | `void AdvanceStepperAxis::addPositionSteps(int32_t deltaSteps) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 204 | `    currentPositionSteps += deltaSteps;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 205 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 206 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 207 | `bool AdvanceStepperAxis::isHomeEnabled() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 208 | `    return config.homeEnabled;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 209 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 210 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 211 | `bool AdvanceStepperAxis::isHomeSensorActive() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 212 | `    if (!config.homeEnabled) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 213 | `        return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 214 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 215 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 216 | `    if (config.homeSimulationEnabled) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 217 | `        return simulatedHomeActive;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 218 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 219 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 220 | `    return readInputActive(` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 221 | `        config.homePin,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 222 | `        config.homeActiveLow` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 223 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 224 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 225 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 226 | `bool AdvanceStepperAxis::isMinLimitEnabled() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 227 | `    return config.minLimitEnabled;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 228 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 229 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 230 | `bool AdvanceStepperAxis::isMaxLimitEnabled() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 231 | `    return config.maxLimitEnabled;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 232 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 233 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 234 | `bool AdvanceStepperAxis::isMinLimitActive() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 235 | `    if (!config.minLimitEnabled) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 236 | `        return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 237 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 238 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 239 | `    return readInputActive(` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 240 | `        config.minLimitPin,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 241 | `        config.minLimitActiveLow` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 242 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 243 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 244 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 245 | `bool AdvanceStepperAxis::isMaxLimitActive() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 246 | `    if (!config.maxLimitEnabled) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 247 | `        return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 248 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 249 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 250 | `    return readInputActive(` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 251 | `        config.maxLimitPin,` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 252 | `        config.maxLimitActiveLow` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 253 | `    );` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 254 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 255 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 256 | `bool AdvanceStepperAxis::getHomeDirectionPositive() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 257 | `    return config.homeDirectionPositive;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 258 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 259 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 260 | `float AdvanceStepperAxis::getHomingSeekSpeedMmS() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 261 | `    return config.homingSeekSpeedMmS;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 262 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 263 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 264 | `float AdvanceStepperAxis::getHomingLatchSpeedMmS() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 265 | `    return config.homingLatchSpeedMmS;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 266 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 267 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 268 | `float AdvanceStepperAxis::getHomingBackoffMm() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 269 | `    return config.homingBackoffMm;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 270 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 271 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 272 | `float AdvanceStepperAxis::getMaxHomingTravelMm() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 273 | `    return config.maxHomingTravelMm;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 274 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 275 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 276 | `float AdvanceStepperAxis::getHomePositionMm() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 277 | `    return config.homePositionMm;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 278 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 279 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 280 | `bool AdvanceStepperAxis::isHomeSimulationEnabled() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 281 | `    return config.homeSimulationEnabled;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 282 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 283 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 284 | `void AdvanceStepperAxis::setHomeSimulationEnabled(bool enabled) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 285 | `    config.homeSimulationEnabled = enabled;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 286 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 287 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 288 | `void AdvanceStepperAxis::setSimulatedHomeActive(bool active) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 289 | `    simulatedHomeActive = active;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 290 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 291 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 292 | `bool AdvanceStepperAxis::isHomed() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 293 | `    return homed;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 294 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 295 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 296 | `void AdvanceStepperAxis::setHomed(bool state) {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 297 | `    homed = state;` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 298 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 299 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 300 | `bool AdvanceStepperAxis::areSoftLimitsEnabled() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 301 | `    return config.softLimitsEnabled;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 302 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 303 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 304 | `bool AdvanceStepperAxis::isTargetWithinSoftLimits(float targetMm) const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 305 | `    if (!config.softLimitsEnabled) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 306 | `        return true;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 307 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 308 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 309 | `    if (targetMm < config.softLimitMinMm) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 310 | `        return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 311 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 312 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 313 | `    if (targetMm > config.softLimitMaxMm) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 314 | `        return false;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 315 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 316 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 317 | `    return true;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 318 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 319 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 320 | `float AdvanceStepperAxis::getSoftLimitMinMm() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 321 | `    return config.softLimitMinMm;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 322 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 323 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 324 | `float AdvanceStepperAxis::getSoftLimitMaxMm() const {` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 325 | `    return config.softLimitMaxMm;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 326 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |

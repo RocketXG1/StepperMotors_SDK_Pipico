@@ -1,0 +1,76 @@
+MANUAL ACTUALIZADO - prgProject/RecipeLoader.cpp
+================================================================================
+Funcion inicial del archivo
+- Documenta, parsea o proporciona recetas de maquina para configurar ejes desde texto/microSD.
+
+Metodos, variables, secciones o instancias detectadas
+- L8: `const char* getRecipeLoadStatusMessage(RecipeLoadStatus status) {`
+- L19: `RecipeLoadStatus loadRecipeFromMicroSdOrFallback(MachineRecipe& recipe) {`
+- L22: `SdRecipeStorage storage(SdSpiConfig::createDefault());`
+- L25: `printf("Loading machine recipe from microSD: %s\n", DEFAULT_RECIPE_PATH);`
+- L28: `storage.end();`
+- L31: `printf("Recipe loaded from microSD. Axes: %u\n", recipe.axisCount);`
+- L35: `printf("ERROR: microSD recipe is invalid: %s\n", parser.getLastError());`
+- L37: `printf("WARNING: microSD recipe not available: %s\n", storage.getLastError());`
+- L38: `storage.end();`
+- L41: `printf("Using embedded default recipe as a safe demonstration fallback.\n");`
+- L44: `printf("ERROR: embedded default recipe is invalid: %s\n", parser.getLastError());`
+
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
+
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `#include "RecipeLoader.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 2 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 3 | `#include <stdio.h>` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 4 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 5 | `#include "DefaultRecipe.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 6 | `#include "SdRecipeStorage.h"` | Incluye una dependencia necesaria para declaraciones, tipos o funciones usadas en este archivo. |
+| 7 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 8 | `const char* getRecipeLoadStatusMessage(RecipeLoadStatus status) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 9 | `    switch (status) {` | Parte de una maquina de estados o seleccion multiple. |
+| 10 | `        case RecipeLoadStatus::Ok:` | Parte de una maquina de estados o seleccion multiple. |
+| 11 | `            return "recipe loaded";` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 12 | `        case RecipeLoadStatus::DefaultRecipeInvalid:` | Parte de una maquina de estados o seleccion multiple. |
+| 13 | `            return "embedded default recipe is invalid";` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 14 | `        default:` | Parte de una maquina de estados o seleccion multiple. |
+| 15 | `            return "unknown recipe load status";` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 16 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 17 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 18 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 19 | `RecipeLoadStatus loadRecipeFromMicroSdOrFallback(MachineRecipe& recipe) {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 20 | `    static char recipeText[MACHINE_RECIPE_MAX_TEXT_LENGTH];` | Declara o define simbolo de alcance estatico/externo usado por otros modulos segun corresponda. |
+| 21 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 22 | `    SdRecipeStorage storage(SdSpiConfig::createDefault());` | Declara o implementa una funcion/metodo; sus parametros controlan la operacion y su retorno informa resultado o dato. |
+| 23 | `    MachineRecipeParser parser;` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 24 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 25 | `    printf("Loading machine recipe from microSD: %s\n", DEFAULT_RECIPE_PATH);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 26 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 27 | `    if (storage.begin() && storage.readTextFile(DEFAULT_RECIPE_PATH, recipeText, sizeof(recipeText))) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 28 | `        storage.end();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 29 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 30 | `        if (parser.parse(recipeText, recipe)) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 31 | `            printf("Recipe loaded from microSD. Axes: %u\n", recipe.axisCount);` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 32 | `            return RecipeLoadStatus::Ok;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 33 | `        }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 34 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 35 | `        printf("ERROR: microSD recipe is invalid: %s\n", parser.getLastError());` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 36 | `    } else {` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 37 | `        printf("WARNING: microSD recipe not available: %s\n", storage.getLastError());` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 38 | `        storage.end();` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 39 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 40 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 41 | `    printf("Using embedded default recipe as a safe demonstration fallback.\n");` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 42 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 43 | `    if (!parser.parse(DEFAULT_MACHINE_RECIPE_TEXT, recipe)) {` | Evalua una condicion para decidir si ejecutar el bloque siguiente. |
+| 44 | `        printf("ERROR: embedded default recipe is invalid: %s\n", parser.getLastError());` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 45 | `        return RecipeLoadStatus::DefaultRecipeInvalid;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 46 | `    }` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 47 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 48 | `    return RecipeLoadStatus::Ok;` | Finaliza la funcion devolviendo el valor o estado indicado. |
+| 49 | `}` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |

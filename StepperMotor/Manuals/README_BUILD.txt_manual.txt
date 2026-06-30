@@ -1,70 +1,42 @@
-MANUAL DETALLADO: README_BUILD.txt
-==================================
+MANUAL ACTUALIZADO - README_BUILD.txt
+================================================================================
+Funcion inicial del archivo
+- Archivo de soporte/documentacion del proyecto.
 
-Finalidad: Este archivo funciona como archivo de documentación o contexto del proyecto.
+Metodos, variables, secciones o instancias detectadas
+- L20: `- Requiere Raspberry Pi Pico SDK instalado o PICO_SDK_FETCH_FROM_GIT=ON.`
+- L24: `motion.setHomeOrderByName({"Z", "X", "Y"});`
 
-Ubicación y relación dentro del proyecto:
-- Ruta original: README_BUILD.txt
-- Manual generado: Manuals/README_BUILD.txt_manual.txt
-- No declara includes C/C++ directos, o es un archivo de texto/configuración.
-- Relación general: los encabezados en lib exponen tipos; los .cpp en src implementan comportamiento; prgProject integra la aplicación; FunctionBlocks encapsula lógica reusable; los documentos .txt explican contexto de uso.
+Quien lo manda a llamar / relacion con otros archivos
+- Los headers en lib son incluidos por implementaciones en src y por prgProject/main.cpp.
+- Los .cpp son compilados por prgProject/CMakeLists.txt y sus funciones se ejecutan desde main.cpp o desde otros objetos del controlador.
+- Los archivos config/recipes/*.txt son consumidos por RecipeLoader/SdRecipeStorage/MachineRecipeParser cuando se carga una receta.
+- Los manuales son referencia de uso y no participan en la compilacion.
 
-Forma de uso o instanciación esperada:
-- Si es un .h, se incluye con #include desde archivos .cpp y sus clases/structs se instancian según sus constructores o fábricas estáticas.
-- Si es un .cpp, no se instancia directamente: se compila y enlaza para aportar las implementaciones declaradas en su encabezado correspondiente.
-- Si es .pio, se carga en el bloque PIO y se inicializa mediante la función C SDK generada/embebida.
-- Si es CMake o .txt, se usa como soporte de compilación o documentación; no produce objetos C++ instanciables.
-
-Descripción línea a línea:
-Línea 1: `Proyecto: template_motion_project`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 2: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 3: `Estructura principal:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 4: `- prgProject/main.cpp`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 5: `- prgProject/CMakeLists.txt`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 6: `- lib/objStepper/*.h`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 7: `- lib/objMotion/*.h`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 8: `- src/srcStepper/*.cpp y stepper.pio`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 9: `- src/srcMotion/*.cpp`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 10: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 11: `Build desde terminal:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 12: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 13: `cd template/prgProject`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 14: `mkdir build`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 15: `cd build`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 16: `cmake -G "Ninja" ..`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 17: `cmake --build .`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 18: ``
-  Explicación: Línea en blanco usada para separar bloques y mejorar la legibilidad.
-Línea 19: `Notas:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 20: `- Requiere Raspberry Pi Pico SDK instalado o PICO_SDK_FETCH_FROM_GIT=ON.`
-  Explicación: Asigna o actualiza un valor de configuración, estado, cálculo intermedio o salida.
-Línea 21: `- Los pines STEP del ejemplo son GPIO 2, 3 y 4.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 22: `- El PIO reserva GPIO 2 a GPIO 9 como grupo de STEP consecutivo.`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 23: `- El orden HOME se configura por nombre en main.cpp:`
-  Explicación: Elemento de sintaxis del archivo que contribuye a la definición, configuración o documentación del proyecto.
-Línea 24: `  motion.setHomeOrderByName({"Z", "X", "Y"});`
-  Explicación: Invoca una función/método o declara una firma de función según el contexto del archivo.
-
-Resumen funcional:
-- README_BUILD.txt participa en el SDK aportando archivo de documentación o contexto del proyecto.
-- Para modificarlo, revise primero sus includes/dependencias y después verifique que las declaraciones de encabezados coincidan con las implementaciones.
+Explicacion linea por linea
+| Linea | Codigo | Explicacion |
+|---:|---|---|
+| 1 | `Proyecto: template_motion_project` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 2 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 3 | `Estructura principal:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 4 | `- prgProject/main.cpp` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 5 | `- prgProject/CMakeLists.txt` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 6 | `- lib/objStepper/*.h` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 7 | `- lib/objMotion/*.h` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 8 | `- src/srcStepper/*.cpp y stepper.pio` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 9 | `- src/srcMotion/*.cpp` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 10 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 11 | `Build desde terminal:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 12 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 13 | `cd template/prgProject` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 14 | `mkdir build` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 15 | `cd build` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 16 | `cmake -G "Ninja" ..` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 17 | `cmake --build .` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 18 | ` ` | Linea en blanco usada para separar bloques y mejorar lectura. |
+| 19 | `Notas:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 20 | `- Requiere Raspberry Pi Pico SDK instalado o PICO_SDK_FETCH_FROM_GIT=ON.` | Asigna o configura un valor; en recetas define un parametro usado por el firmware. |
+| 21 | `- Los pines STEP del ejemplo son GPIO 2, 3 y 4.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 22 | `- El PIO reserva GPIO 2 a GPIO 9 como grupo de STEP consecutivo.` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 23 | `- El orden HOME se configura por nombre en main.cpp:` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
+| 24 | `  motion.setHomeOrderByName({"Z", "X", "Y"});` | Instruccion de codigo/configuracion que participa en el flujo descrito por el bloque donde aparece. |
