@@ -1,0 +1,114 @@
+# ExampleGeneralAxieslHomeSimulated.ccp
+
+## Finalidad del programa
+
+Este ejemplo tiene la misma estructura general de `prgProject/main.cpp`, pero se reduce a probar la secuencia de HOME de todos los ejes usando sensores HOME simulados.
+
+La intención es que este archivo se pueda copiar o renombrar como `main.cpp` cuando se quiera compilar un firmware de prueba donde todos los ejes que tengan `homeSimulationEnabled=true` o `homeSimulationEnabled=1` en la receta se consideren como si su sensor HOME ya estuviera activo.
+
+> Nota: el archivo se creó con la extensión solicitada `.ccp`. Si se desea compilarlo directamente como código C++, renombrarlo a `.cpp` o sustituir el `main.cpp` del proyecto con su contenido.
+
+## Métodos utilizados
+
+### `loadRecipeFromMicroSdOrFallback(recipe)`
+
+Carga la receta desde microSD o usa la receta embebida de respaldo. De esta receta salen los ejes, sus nombres, pines y parámetros HOME, incluyendo `homeSimulationEnabled`.
+
+### `StepperPioPulseEngine(...)`
+
+Crea el motor PIO encargado de generar pulsos STEP. El ejemplo mantiene la misma configuración base:
+
+```cpp
+StepperPioPulseEngine pulseEngine(pio0, 0, 2, 10);
+```
+
+Esto usa PIO0, state machine 0, primer GPIO STEP en 2 y un intervalo mínimo de 10 us.
+
+### `initializeMotionSystem(recipe, pulseEngine, motionSystem)`
+
+Instancia los ejes usando el orden cargado desde la receta. Si la receta carga los ejes como X, Y, Z, entonces normalmente:
+
+```text
+axisIndex 0 = X
+axisIndex 1 = Y
+axisIndex 2 = Z
+```
+
+Si la receta cambia el orden, el índice también cambia.
+
+### `motion.getAxisCount()`
+
+Devuelve cuántos ejes fueron instanciados en el controlador de movimiento.
+
+### `motion.getAxisName(axisIndex)`
+
+Devuelve el nombre del eje en una posición determinada. Se usa para imprimir qué eje se está simulando.
+
+### `isHomeSimulationEnabled()`
+
+Indica si ese eje fue configurado para usar HOME simulado. Este valor viene de la receta:
+
+```text
+homeSimulationEnabled=true
+```
+
+o:
+
+```text
+homeSimulationEnabled=1
+```
+
+### `setSimulatedHomeActive(true)`
+
+Marca el sensor HOME simulado de ese eje como activo. Es decir, le dice al sistema:
+
+```text
+Este eje ya alcanzó HOME.
+```
+
+### `executeRecipeHomeSequence(motion, recipe)`
+
+Ejecuta la secuencia de HOME usando el orden configurado en la receta. Como antes de llamarla se marcaron activos los sensores simulados, los ejes con simulación HOME activa quedarán referenciados sin moverse físicamente.
+
+## Flujo del programa
+
+1. Inicializa USB/stdio.
+2. Carga la receta.
+3. Crea el motor PIO de STEP.
+4. Crea el `MotionSystem`.
+5. Obtiene el controlador `AdvanceMotionController`.
+6. Recorre todos los ejes instanciados.
+7. Si un eje tiene `homeSimulationEnabled`, llama:
+
+```cpp
+setSimulatedHomeActive(true);
+```
+
+8. Ejecuta:
+
+```cpp
+executeRecipeHomeSequence(motion, recipe);
+```
+
+9. Si HOME falla, ejecuta `emergencyStop()`.
+10. Si HOME termina bien, imprime mensaje de éxito y queda en ciclo infinito.
+
+## Requisitos en la receta
+
+Para que un eje sea simulado, debe tener HOME habilitado y simulación activada:
+
+```text
+homeEnabled=true
+homeSimulationEnabled=1
+homePositionMm=0.0
+```
+
+Si un eje tiene `homeSimulationEnabled=false`, el ejemplo no activa su HOME simulado y ese eje se comportará según su configuración normal.
+
+## Uso recomendado
+
+1. Revisar `config/recipes/axes.txt`.
+2. Activar `homeSimulationEnabled=1` en los ejes que se quieren simular.
+3. Copiar o renombrar este ejemplo como `main.cpp` si se desea compilarlo como firmware principal.
+4. Compilar y cargar en la Pico.
+5. Observar por consola los mensajes de ejes simulados y resultado de HOME.
